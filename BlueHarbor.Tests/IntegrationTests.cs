@@ -57,7 +57,11 @@ public class IntegrationTests
         Assert.Equal("Pending", shipResponse.Status);
         Assert.True(shipResponse.ArrivalDay > 1);
 
-        // 3. Avanzamento Giorno fino all'arrivo della nave (o quasi)
+        // 3. Verifica GetAllShipsAsync prima dell'assegnazione
+        var allShipsBefore = await shipRepo.GetAllShipsAsync();
+        Assert.NotEmpty(allShipsBefore);
+
+        // 4. Avanzamento Giorno fino all'arrivo della nave (o quasi)
         while (await systemService.GetCurrentDayAsync() < shipResponse.ArrivalDay)
         {
             await systemService.AdvanceDayAsync();
@@ -66,7 +70,7 @@ public class IntegrationTests
         var currentDay = await systemService.GetCurrentDayAsync();
         Assert.Equal(shipResponse.ArrivalDay, currentDay);
 
-        // 4. Assegnazione Banchina
+        // 5. Assegnazione Banchina
         // Cerchiamo una banchina della taglia giusta
         var berths = await context.Banchine.Include(b => b.Dimensione).ToListAsync();
         var compatibleBerth = berths.First(b => b.Dimensione.NomeDimensione == shipResponse.Size);
@@ -78,11 +82,16 @@ public class IntegrationTests
         Assert.Equal(compatibleBerth.IdBanchina, assignment.BerthId);
         Assert.True(assignment.StartDay >= shipResponse.ArrivalDay);
 
-        // 5. Verifica stato nave aggiornato
+        // 6. Verifica GetAllShipsAsync dopo l'assegnazione
+        var allShipsAfter = await shipRepo.GetAllShipsAsync();
+        var shipDtoAfter = allShipsAfter.First(s => s.IdNave == shipResponse.Id);
+        Assert.Equal(assignment.StartDay, shipDtoAfter.GiornoInizio);
+
+        // 7. Verifica stato nave aggiornato
         var updatedShip = await shipRepo.GetByIdAsync(shipResponse.Id);
         Assert.Equal("Assigned", updatedShip.Stato);
 
-        // 6. Test per lo stato Departed (via BackgroundJobService)
+        // 8. Test per lo stato Departed (via BackgroundJobService)
         var backgroundJobService = new BackgroundJobService(shipRepo);
         
         // Avanziamo il giorno oltre la fine della permanenza
@@ -98,7 +107,7 @@ public class IntegrationTests
         // Eseguiamo manualmente il job di background
         await backgroundJobService.ProcessDepartedShipsAsync(currentSystemDay);
 
-        // 7. Verifica stato finale
+        // 9. Verifica stato finale
         var finalShip = await shipRepo.GetByIdAsync(shipResponse.Id);
         Assert.Equal("Departed", finalShip.Stato);
     }

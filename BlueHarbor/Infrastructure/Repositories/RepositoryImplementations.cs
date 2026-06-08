@@ -36,7 +36,18 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
                 s.GiornoArrivo, 
                 s.DurataOccupazione, 
                 s.Stato,
-                context.Occupazioni.Where(o => o.IdNave == s.IdNave).Select(o => (int?)o.GiornoInizio).FirstOrDefault()
+                context.Occupazioni
+                    .Where(o => o.IdNave == s.IdNave)
+                    .Select(o => (int?)o.GiornoInizio)
+                    .FirstOrDefault(),
+                context.Occupazioni
+                    .Where(o => o.IdNave == s.IdNave)
+                    .Select(o => (int?)o.IdBanchina)
+                    .FirstOrDefault(),
+                context.Occupazioni
+                    .Where(o => o.IdNave == s.IdNave)
+                    .Select(o => o.Banchina.NomeBanchina)
+                    .FirstOrDefault()
             ))
             .ToListAsync();
     }

@@ -6,7 +6,7 @@ public interface IShipService
 {
     Task<IEnumerable<ShipDto>> GetAllShipsAsync();
     Task<ShipResponseDto> CreateShipAsync(CreateShipRequest request);
-    Task<AssignmentDto> AssignBerthAsync(int shipId, int berthId);
+    Task<AssignmentResponseDto> AssignBerthAsync(int shipId, int berthId);
 }
 
 public interface ISystemService

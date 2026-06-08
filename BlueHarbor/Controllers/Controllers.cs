@@ -16,7 +16,7 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
     [HttpGet]
     public async Task<IActionResult> GetAllShips()
     {
-        var ships = await shipService.GetAllShipsAsync();
+        var ships = await shipRepository.GetAllShipsAsync(); // ← Repository, non Service
         return Ok(ships);
     }
 
