@@ -13,6 +13,13 @@ namespace BlueHarbor.Controllers;
 [Authorize(Roles = Roles.Operatore)]
 public class ShipsController(IShipService shipService, IShipRepository shipRepository) : ControllerBase
 {
+    [HttpGet]
+    public async Task<IActionResult> GetAllShips()
+    {
+        var ships = await shipService.GetAllShipsAsync();
+        return Ok(ships);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateShip([FromBody] CreateShipRequest request)
     {
@@ -46,6 +53,13 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
 [Authorize(Roles = Roles.Scheduler)]
 public class SchedulerController(ISchedulerService schedulerService) : ControllerBase
 {
+    [HttpGet("berths")]
+    public async Task<IActionResult> GetBerths()
+    {
+        var berths = await schedulerService.GetBerthsAsync();
+        return Ok(berths);
+    }
+
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingShips()
     {

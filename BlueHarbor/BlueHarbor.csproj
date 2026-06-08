@@ -12,6 +12,8 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+      <Content Remove="frontend\**" />
+      <None Include="frontend\**" />
     </ItemGroup>
 
     <ItemGroup>

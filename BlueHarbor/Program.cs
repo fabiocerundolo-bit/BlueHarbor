@@ -11,10 +11,11 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+// builder.Services.AddRazorComponents()
+//    .AddInteractiveServerComponents();
 
 builder.Services.AddControllers();
+builder.Services.AddAntiforgery();
 
 // Database
 builder.Services.AddDbContext<BlueHarborDbContext>(options =>
@@ -87,13 +88,15 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.MapControllers();
+
+// Fallback per SPA React
+app.MapFallbackToFile("index.html");
 
 app.UseHangfireDashboard("/hangfire");
-app.MapControllers();
 
 app.Run();

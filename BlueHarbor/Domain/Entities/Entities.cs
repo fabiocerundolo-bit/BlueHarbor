@@ -2,56 +2,66 @@
 
 using BlueHarbor.Domain.Enums;
 
-public class Ship
+public class Ruolo
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Notes { get; set; }
-    
-    // Regola: Dimensione assegnata automaticamente dal sistema
-    public ShipSize Size { get; set; }
-    
-    // Regola: Giorno di arrivo casuale (CurrentDay + 1..30)
-    public int ArrivalDay { get; set; }
-    
-    // Regola: Durata casuale tra 3 e 15 giorni
-    public int DurationDays { get; set; }
-    
-    public ShipStatus Status { get; set; } = ShipStatus.Pending;
-    
-    // Relazioni opzionali, popolate solo dopo l'assegnazione
-    public int? AssignedBerthId { get; set; }
-    public Berth? AssignedBerth { get; set; }
-    
-    public int? StartDay { get; set; } // Giorno effettivo di inizio occupazione
+    public int IdRuolo { get; set; }
+    public string NomeRuolo { get; set; } = string.Empty;
 }
 
-public class Berth
+public class Dimensione
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty; // Es: "Berth-XL-1"
-    public ShipSize Size { get; set; }
-    
-    // Una banchina può avere multiple assegnazioni nel tempo
-    public ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
+    public int IdDimensione { get; set; }
+    public string NomeDimensione { get; set; } = string.Empty;
 }
 
-public class Assignment
+public class Utente
 {
-    public int Id { get; set; }
-    public int ShipId { get; set; }
-    public Ship Ship { get; set; } = null!;
-    
-    public int BerthId { get; set; }
-    public Berth Berth { get; set; } = null!;
-    
-    public int StartDay { get; set; }
-    public int EndDay { get; set; } // Calcolato come: StartDay + DurationDays - 1
+    public int IdUtente { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public int IdRuolo { get; set; }
+    public Ruolo Ruolo { get; set; } = null!;
 }
 
-// Entità Singleton per gestire il modello temporale virtuale
+public class Banchina
+{
+    public int IdBanchina { get; set; }
+    public string NomeBanchina { get; set; } = string.Empty;
+    public int IdDimensione { get; set; }
+    public Dimensione Dimensione { get; set; } = null!;
+    
+    public ICollection<Occupazione> Occupazioni { get; set; } = new List<Occupazione>();
+}
+
+public class Nave
+{
+    public int IdNave { get; set; }
+    public string NomeNave { get; set; } = string.Empty;
+    public int GiornoArrivo { get; set; }
+    public int DurataOccupazione { get; set; }
+    public string Stato { get; set; } = "Pending"; // 'Pending', 'Assigned', 'Departed'
+    public string? Note { get; set; }
+    public int IdDimensione { get; set; }
+    public Dimensione Dimensione { get; set; } = null!;
+    public int IdUtente { get; set; }
+    public Utente Utente { get; set; } = null!;
+}
+
+public class Occupazione
+{
+    public int IdOccupazione { get; set; }
+    public int GiornoInizio { get; set; }
+    public int IdNave { get; set; }
+    public Nave Nave { get; set; } = null!;
+    public int IdBanchina { get; set; }
+    public Banchina Banchina { get; set; } = null!;
+    public int IdUtente { get; set; }
+    public Utente Utente { get; set; } = null!;
+}
+
 public class SystemState
 {
-    public int Id { get; set; } = 1; // Chiave fissa per avere un solo record
-    public int CurrentDay { get; set; } = 1; // Il sistema inizia dal Giorno 1
+    public int Id { get; set; } = 1;
+    public int CurrentDay { get; set; } = 1;
 }

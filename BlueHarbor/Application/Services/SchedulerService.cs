@@ -13,12 +13,17 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
         return await shipRepository.GetPendingShipsAsync();
     }
 
+    public async Task<IEnumerable<BerthDto>> GetBerthsAsync()
+    {
+        return await berthRepository.GetBerthsWithAssignmentsAsync();
+    }
+
     public async Task<AssignmentResponseDto> AssignShipToBerthAsync(int shipId, int berthId)
     {
         // 1. Recupera la nave e verifica che sia in stato Pending
         var ship = await shipRepository.GetByIdAsync(shipId);
         if (ship == null) throw new KeyNotFoundException("Nave non trovata.");
-        if (ship.Status != ShipStatus.Pending) 
+        if (ship.Stato != "Pending") 
             throw new InvalidOperationException("La nave non è in stato Pending.");
 
         // 2. Recupera la banchina con le sue assegnazioni esistenti
@@ -26,36 +31,34 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
         if (berth == null) throw new KeyNotFoundException("Banchina non trovata.");
 
         // 3. Regola di dominio: la banchina deve essere compatibile per dimensione
-        if (berth.Size != ship.Size)
+        if (berth.IdDimensione != ship.IdDimensione)
         {
-            throw new InvalidOperationException($"Dimensione non compatibile. Nave: {ship.Size}, Banchina: {berth.Size}");
+            throw new InvalidOperationException($"Dimensione non compatibile. Nave: {ship.IdDimensione}, Banchina: {berth.IdDimensione}");
         }
 
         // 4. Algoritmo: Trova il primo slot temporale disponibile
-        int startDay = FindFirstAvailableSlot(berth, ship.ArrivalDay, ship.DurationDays);
-        int endDay = startDay + ship.DurationDays - 1;
+        int startDay = FindFirstAvailableSlot(berth, ship.GiornoArrivo, ship.DurataOccupazione);
+        int endDay = startDay + ship.DurataOccupazione - 1;
 
-        // 5. Aggiorna lo stato della nave e le proprietà di assegnazione
-        ship.Status = ShipStatus.Assigned;
-        ship.AssignedBerthId = berth.Id;
-        ship.StartDay = startDay;
+        // 5. Aggiorna lo stato della nave
+        ship.Stato = "Assigned";
 
-        // 6. Crea il record di assegnazione
-        var assignment = new Assignment
+        // 6. Crea il record di occupazione
+        var occupazione = new Occupazione
         {
-            ShipId = ship.Id,
-            BerthId = berth.Id,
-            StartDay = startDay,
-            EndDay = endDay
+            IdNave = ship.IdNave,
+            IdBanchina = berth.IdBanchina,
+            GiornoInizio = startDay,
+            IdUtente = 1 // Default Admin
         };
         
-        await shipRepository.AddAssignmentAsync(assignment);
+        await shipRepository.AddAssignmentAsync(occupazione);
         await shipRepository.UpdateAsync(ship);
 
-        return new AssignmentResponseDto(ship.Id, berth.Id, startDay, endDay, ship.Status);
+        return new AssignmentResponseDto(ship.IdNave, berth.IdBanchina, startDay, endDay, ship.Stato);
     }
 
-    private int FindFirstAvailableSlot(Berth berth, int earliestStart, int duration)
+    private int FindFirstAvailableSlot(Banchina berth, int earliestStart, int duration)
     {
         int candidateStart = earliestStart;
         bool hasConflict;
@@ -65,17 +68,16 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
             hasConflict = false;
             int candidateEnd = candidateStart + duration - 1;
 
-            foreach (var existing in berth.Assignments)
+            foreach (var existing in berth.Occupazioni)
             {
-                // Condizione di sovrapposizione: 
-                // Il nuovo intervallo [candidateStart, candidateEnd] si sovrappone a [existing.StartDay, existing.EndDay]
-                // se candidateStart <= existing.EndDay E candidateEnd >= existing.StartDay
-                if (candidateStart <= existing.EndDay && candidateEnd >= existing.StartDay)
+                // Calcoliamo la fine dell'occupazione esistente
+                int existingEnd = existing.GiornoInizio + (existing.Nave?.DurataOccupazione ?? 0) - 1;
+
+                if (candidateStart <= existingEnd && candidateEnd >= existing.GiornoInizio)
                 {
                     hasConflict = true;
-                    // Sposta il candidato al giorno successivo alla fine dell'assegnazione conflittuale
-                    candidateStart = existing.EndDay + 1;
-                    break; // Ricomincia il controllo con il nuovo candidateStart
+                    candidateStart = existingEnd + 1;
+                    break;
                 }
             }
         } while (hasConflict);

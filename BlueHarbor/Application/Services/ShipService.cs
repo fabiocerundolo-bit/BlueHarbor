@@ -11,65 +11,70 @@ public class ShipService(
     IBerthRepository berthRepository,
     ISystemStateRepository stateRepository) : IShipService
 {
+    public async Task<IEnumerable<ShipDto>> GetAllShipsAsync()
+    {
+        return await shipRepository.GetAllShipsAsync();
+    }
+
     public async Task<ShipResponseDto> CreateShipAsync(CreateShipRequest request)
     {
         var state = await stateRepository.GetAsync();
         
-        var sizes = Enum.GetValues<ShipSize>();
-        var ship = new Ship
+        // Assegniamo una dimensione casuale e un utente di default (IdUtente = 1)
+        int randomDimId = Random.Shared.Next(1, 5);
+        string[] dimNames = ["XL", "L", "M", "S"];
+        
+        var ship = new Nave
         {
-            Name = request.Name.Trim(),
-            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-            Size = sizes[Random.Shared.Next(sizes.Length)],
-            ArrivalDay = state.CurrentDay + Random.Shared.Next(1, 31),
-            DurationDays = Random.Shared.Next(3, 16),
-            Status = ShipStatus.Pending
+            NomeNave = request.Name.Trim(),
+            Note = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            IdDimensione = randomDimId,
+            GiornoArrivo = state.CurrentDay + Random.Shared.Next(1, 31),
+            DurataOccupazione = Random.Shared.Next(3, 16),
+            Stato = "Pending",
+            IdUtente = 1 // Admin di default per ora
         };
 
         await shipRepository.AddAsync(ship);
         
         return new ShipResponseDto(
-            ship.Id,
-            ship.Name,
-            ship.Notes,
-            ship.Size,
-            ship.ArrivalDay,
-            ship.DurationDays,
-            ship.Status
+            ship.IdNave,
+            ship.NomeNave,
+            ship.Note,
+            dimNames[randomDimId - 1],
+            ship.GiornoArrivo,
+            ship.DurataOccupazione,
+            ship.Stato
         );
     }
 
     public async Task<AssignmentDto> AssignBerthAsync(int shipId, int berthId)
     {
         var ship = await shipRepository.GetByIdAsync(shipId) ?? throw new Exception("Ship not found");
-        if (ship.Status != ShipStatus.Pending) throw new InvalidOperationException("Ship not pending");
+        if (ship.Stato != "Pending") throw new InvalidOperationException("Ship not pending");
 
         var berth = await berthRepository.GetByIdAsync(berthId) ?? throw new Exception("Berth not found");
-        if (berth.Size != ship.Size) throw new InvalidOperationException("Size mismatch");
+        if (berth.IdDimensione != ship.IdDimensione) throw new InvalidOperationException("Size mismatch");
 
-        int proposedStartDay = FindFirstAvailableSlot(berth, ship.ArrivalDay, ship.DurationDays);
+        int proposedStartDay = FindFirstAvailableSlot(berth, ship.GiornoArrivo, ship.DurataOccupazione);
         
-        ship.Status = ShipStatus.Assigned;
-        ship.AssignedBerthId = berth.Id;
-        ship.StartDay = proposedStartDay;
+        ship.Stato = "Assigned";
 
-        // Aggiungiamo l'assegnazione alla collezione della banchina per permettere a EF di tracciarla
-        // e per far sì che FindFirstAvailableSlot funzioni se riutilizziamo lo stesso oggetto Berth
-        var newAssignment = new Assignment
+        var newOccupazione = new Occupazione
         {
-            ShipId = ship.Id,
-            BerthId = berth.Id,
-            StartDay = proposedStartDay,
-            EndDay = proposedStartDay + ship.DurationDays - 1
+            IdNave = ship.IdNave,
+            IdBanchina = berth.IdBanchina,
+            GiornoInizio = proposedStartDay,
+            IdUtente = 1 // Admin di default
         };
-        berth.Assignments.Add(newAssignment);
-
+        
+        await shipRepository.AddAssignmentAsync(newOccupazione);
         await shipRepository.UpdateAsync(ship);
         
-        return new AssignmentDto(ship.Id, berth.Id, proposedStartDay, newAssignment.EndDay);
+        return new AssignmentDto(ship.IdNave, berth.IdBanchina, proposedStartDay, proposedStartDay + ship.DurataOccupazione - 1);
     }
 
-    private int FindFirstAvailableSlot(Berth berth, int earliestStart, int duration)
+    private int FindFirstAvailableSlot(Banchina berth, int earliestStart, int duration)
     {
         int candidateDay = earliestStart;
         bool conflict;
@@ -79,12 +84,16 @@ public class ShipService(
             conflict = false;
             int candidateEnd = candidateDay + duration - 1;
 
-            foreach (var existing in berth.Assignments)
+            foreach (var existing in berth.Occupazioni)
             {
-                if (candidateDay <= existing.EndDay && candidateEnd >= existing.StartDay)
+                // In un'applicazione reale, dovremmo calcolare la fine dell'occupazione esistente
+                // Carichiamo Nave per avere DurataOccupazione
+                int existingEnd = existing.GiornoInizio + (existing.Nave?.DurataOccupazione ?? 0) - 1;
+                
+                if (candidateDay <= existingEnd && candidateEnd >= existing.GiornoInizio)
                 {
                     conflict = true;
-                    candidateDay = existing.EndDay + 1;
+                    candidateDay = existingEnd + 1;
                     break;
                 }
             }

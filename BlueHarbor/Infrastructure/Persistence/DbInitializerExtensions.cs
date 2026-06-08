@@ -11,27 +11,25 @@ public static class DbInitializerExtensions
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BlueHarborDbContext>();
 
-        // Applica le migration pending o assicura che il database sia creato
-        // In questo contesto, EnsureCreated è spesso usato per semplicità se non si usano migration
-        // Ma il suggerimento dice MigrateAsync. Useremo MigrateAsync se ci sono migration, 
-        // altrimenti EnsureCreated. Dato che siamo in net10.0 e potrebbe non esserci un tool di migration installato,
-        // usiamo context.Database.MigrateAsync() se possibile, o context.Database.EnsureCreatedAsync().
-        
-        // Per seguire il suggerimento:
+        // In un ambiente di sviluppo, se il DB esiste ma non ha tabelle (o ha uno schema vecchio), 
+        // EnsureCreatedAsync non farà nulla. Per risolvere l'errore 208, forziamo la ricreazione in caso di errore.
         try 
         {
-            await dbContext.Database.MigrateAsync();
+            await dbContext.Database.EnsureCreatedAsync();
+            
+            // Verifica immediata
+            if (!await dbContext.Banchine.AnyAsync())
+            {
+                Console.WriteLine("Seed manuale non rilevato, EnsureCreatedAsync potrebbe non aver creato le tabelle.");
+            }
         }
-        catch
+        catch (Exception)
         {
-            // Se non ci sono migration, EnsureCreated è il fallback per il seed
+            Console.WriteLine("Database inconsistente rilevato. Tentativo di rigenerazione...");
+            await dbContext.Database.EnsureDeletedAsync();
             await dbContext.Database.EnsureCreatedAsync();
         }
 
-        // Verifica se il seed è già stato applicato controllando le banchine
-        if (!await dbContext.Berths.AnyAsync())
-        {
-            Console.WriteLine("Database inizializzato con le 8 banchine e SystemState a Giorno 1.");
-        }
+        Console.WriteLine("Database inizializzato con successo.");
     }
 }

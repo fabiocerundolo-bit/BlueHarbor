@@ -6,20 +6,22 @@ namespace BlueHarbor.Infrastructure.Repositories;
 
 public interface IShipRepository
 {
-    Task<Ship?> GetByIdAsync(int id);
-    Task<IEnumerable<Ship>> GetByStatusAsync(ShipStatus status);
+    Task<Nave?> GetByIdAsync(int id);
+    Task<IEnumerable<Nave>> GetByStatusAsync(string status);
     Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync();
-    Task AddAsync(Ship ship);
-    Task UpdateAsync(Ship ship);
-    Task UpdateRangeAsync(IEnumerable<Ship> ships);
-    Task AddAssignmentAsync(Assignment assignment);
+    Task<IEnumerable<ShipDto>> GetAllShipsAsync();
+    Task AddAsync(Nave ship);
+    Task UpdateAsync(Nave ship);
+    Task UpdateRangeAsync(IEnumerable<Nave> ships);
+    Task AddAssignmentAsync(Occupazione assignment);
     Task<int> UpdateAssignedShipsToDepartedAsync(int currentDay);
 }
 
 public interface IBerthRepository
 {
-    Task<Berth?> GetByIdAsync(int id);
-    Task<IEnumerable<Berth>> GetAllWithAssignmentsAsync();
+    Task<Banchina?> GetByIdAsync(int id);
+    Task<IEnumerable<Banchina>> GetAllWithAssignmentsAsync();
+    Task<IEnumerable<BerthDto>> GetBerthsWithAssignmentsAsync();
 }
 
 public interface ISystemStateRepository

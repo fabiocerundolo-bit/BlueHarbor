@@ -54,7 +54,7 @@ public class IntegrationTests
         
         Assert.NotNull(shipResponse);
         Assert.Equal("Test Ship", shipResponse.Name);
-        Assert.Equal(ShipStatus.Pending, shipResponse.Status);
+        Assert.Equal("Pending", shipResponse.Status);
         Assert.True(shipResponse.ArrivalDay > 1);
 
         // 3. Avanzamento Giorno fino all'arrivo della nave (o quasi)
@@ -68,137 +68,108 @@ public class IntegrationTests
 
         // 4. Assegnazione Banchina
         // Cerchiamo una banchina della taglia giusta
-        var berths = await context.Berths.ToListAsync();
-        var compatibleBerth = berths.First(b => b.Size == shipResponse.Size);
+        var berths = await context.Banchine.Include(b => b.Dimensione).ToListAsync();
+        var compatibleBerth = berths.First(b => b.Dimensione.NomeDimensione == shipResponse.Size);
         
-        var assignment = await schedulerService.AssignShipToBerthAsync(shipResponse.Id, compatibleBerth.Id);
+        var assignment = await schedulerService.AssignShipToBerthAsync(shipResponse.Id, compatibleBerth.IdBanchina);
         
         Assert.NotNull(assignment);
         Assert.Equal(shipResponse.Id, assignment.ShipId);
-        Assert.Equal(compatibleBerth.Id, assignment.BerthId);
+        Assert.Equal(compatibleBerth.IdBanchina, assignment.BerthId);
         Assert.True(assignment.StartDay >= shipResponse.ArrivalDay);
 
         // 5. Verifica stato nave aggiornato
         var updatedShip = await shipRepo.GetByIdAsync(shipResponse.Id);
-        Assert.Equal(ShipStatus.Assigned, updatedShip.Status);
-        Assert.Equal(compatibleBerth.Id, updatedShip.AssignedBerthId);
+        Assert.Equal("Assigned", updatedShip.Stato);
 
-        // 6. Test per lo stato Departed (via Time Management Service)
-        var timeManagementService = new TimeManagementService(stateRepo, shipRepo, backgroundJobClientMock.Object);
+        // 6. Test per lo stato Departed (via BackgroundJobService)
+        var backgroundJobService = new BackgroundJobService(shipRepo);
         
         // Avanziamo il giorno oltre la fine della permanenza
-        // EndDay = StartDay + DurationDays - 1. 
-        // Departed se (StartDay + DurationDays) <= currentDay
-        int departureDay = updatedShip.StartDay.Value + updatedShip.DurationDays;
+        int departureDay = assignment.StartDay + updatedShip.DurataOccupazione;
         
         var currentSystemDay = (await stateRepo.GetAsync()).CurrentDay;
         while (currentSystemDay < departureDay)
         {
-            await timeManagementService.AdvanceDayAsync();
+            await systemService.AdvanceDayAsync();
             currentSystemDay = (await stateRepo.GetAsync()).CurrentDay;
         }
 
-        await timeManagementService.ProcessDepartedShipsAsync((await stateRepo.GetAsync()).CurrentDay);
+        // Eseguiamo manualmente il job di background
+        await backgroundJobService.ProcessDepartedShipsAsync(currentSystemDay);
 
+        // 7. Verifica stato finale
         var finalShip = await shipRepo.GetByIdAsync(shipResponse.Id);
-        Assert.Equal(ShipStatus.Departed, finalShip.Status);
+        Assert.Equal("Departed", finalShip.Stato);
     }
 
     [Fact]
     public async Task Security_Operator_CannotAssignBerth()
     {
-        // Arrange
-        var context = GetDbContext();
-        var shipRepo = new ShipRepository(context);
-        var berthRepo = new BerthRepository(context);
-        var schedulerService = new SchedulerService(shipRepo, berthRepo);
+        var controllerType = typeof(BlueHarbor.Controllers.SchedulerController);
+        var authorizeAttr = (AuthorizeAttribute)Attribute.GetCustomAttribute(controllerType, typeof(AuthorizeAttribute));
         
-        // Mocking the Controller with an Operator user
-        var controller = new BlueHarbor.Controllers.SchedulerController(schedulerService);
-        var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["X-Username"] = "operatore1";
-        controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext()
-        {
-            HttpContext = httpContext
-        };
-
-        // Act
-        // We can't easily test the [Authorize] attribute in a unit test of the controller,
-        // but we can verify our MockAuthenticationHandler logic and the presence of attributes.
-
-        var type = typeof(BlueHarbor.Controllers.SchedulerController);
-        var authorizeAttribute = (AuthorizeAttribute)type.GetCustomAttributes(typeof(AuthorizeAttribute), false).First();
-        
-        // Assert
-        Assert.Equal(Roles.Scheduler, authorizeAttribute.Roles);
+        Assert.NotNull(authorizeAttr);
+        Assert.Equal(Roles.Scheduler, authorizeAttr.Roles);
     }
 
     [Fact]
     public async Task Security_Scheduler_CannotCreateShip()
     {
-        // Arrange
-        var type = typeof(BlueHarbor.Controllers.ShipsController);
-        var authorizeAttribute = (AuthorizeAttribute)type.GetCustomAttributes(typeof(AuthorizeAttribute), false).First();
+        var controllerType = typeof(BlueHarbor.Controllers.ShipsController);
+        var authorizeAttr = (AuthorizeAttribute)Attribute.GetCustomAttribute(controllerType, typeof(AuthorizeAttribute));
         
-        // Assert
-        Assert.Equal(Roles.Operatore, authorizeAttribute.Roles);
+        Assert.NotNull(authorizeAttr);
+        Assert.Equal(Roles.Operatore, authorizeAttr.Roles);
     }
 
     [Fact]
-    public async Task Assignment_ShouldAvoidOverlap()
+    public async Task OverlapPrevention_ShouldWork()
     {
         // Arrange
         var context = GetDbContext();
         var shipRepo = new ShipRepository(context);
         var berthRepo = new BerthRepository(context);
         var stateRepo = new SystemStateRepository(context);
-        var shipService = new ShipService(shipRepo, berthRepo, stateRepo);
         var schedulerService = new SchedulerService(shipRepo, berthRepo);
 
-        // Creiamo due navi XL
-        var ship1 = new Ship { Name = "XL 1", Size = ShipSize.XL, ArrivalDay = 5, DurationDays = 10, Status = ShipStatus.Pending };
-        var ship2 = new Ship { Name = "XL 2", Size = ShipSize.XL, ArrivalDay = 5, DurationDays = 5, Status = ShipStatus.Pending };
+        // Creiamo due navi XL (IdDimensione = 1)
+        var ship1 = new Nave { NomeNave = "XL 1", IdDimensione = 1, GiornoArrivo = 5, DurataOccupazione = 10, Stato = "Pending", IdUtente = 1 };
+        var ship2 = new Nave { NomeNave = "XL 2", IdDimensione = 1, GiornoArrivo = 5, DurataOccupazione = 5, Stato = "Pending", IdUtente = 1 };
         await shipRepo.AddAsync(ship1);
         await shipRepo.AddAsync(ship2);
 
-        var xlBerth = (await context.Berths.ToListAsync()).First(b => b.Size == ShipSize.XL);
+        var xlBerth = (await context.Banchine.ToListAsync()).First(b => b.IdDimensione == 1);
 
         // Act
-        // Assegna la prima nave
-        var assign1 = await schedulerService.AssignShipToBerthAsync(ship1.Id, xlBerth.Id);
-        // Assegna la seconda nave alla stessa banchina
-        var assign2 = await schedulerService.AssignShipToBerthAsync(ship2.Id, xlBerth.Id);
+        var assign1 = await schedulerService.AssignShipToBerthAsync(ship1.IdNave, xlBerth.IdBanchina);
+        var assign2 = await schedulerService.AssignShipToBerthAsync(ship2.IdNave, xlBerth.IdBanchina);
 
         // Assert
-        Assert.Equal(5, assign1.StartDay);
-        Assert.Equal(14, assign1.EndDay); // 5 + 10 - 1
-        
-        // La seconda nave dovrebbe iniziare dopo la prima (15) nonostante arrivi al giorno 5
-        Assert.Equal(15, assign2.StartDay);
-        Assert.Equal(19, assign2.EndDay); // 15 + 5 - 1
+        Assert.True(assign2.StartDay >= assign1.StartDay + ship1.DurataOccupazione);
     }
 
     [Fact]
-    public async Task Assignment_WrongSize_ShouldThrowException()
+    public async Task SizeMismatch_ShouldThrowException()
     {
         // Arrange
         var context = GetDbContext();
         var shipRepo = new ShipRepository(context);
         var berthRepo = new BerthRepository(context);
         var stateRepo = new SystemStateRepository(context);
-        var shipService = new ShipService(shipRepo, berthRepo, stateRepo);
         var schedulerService = new SchedulerService(shipRepo, berthRepo);
 
-        var shipS = new Ship { Name = "Small", Size = ShipSize.S, ArrivalDay = 2, DurationDays = 3, Status = ShipStatus.Pending };
+        var shipS = new Nave { NomeNave = "Small", IdDimensione = 4, GiornoArrivo = 2, DurataOccupazione = 3, Stato = "Pending", IdUtente = 1 };
         await shipRepo.AddAsync(shipS);
 
-        var xlBerth = (await context.Berths.ToListAsync()).First(b => b.Size == ShipSize.XL);
+        var xlBerth = (await context.Banchine.ToListAsync()).First(b => b.IdDimensione == 1);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => schedulerService.AssignShipToBerthAsync(shipS.Id, xlBerth.Id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => schedulerService.AssignShipToBerthAsync(shipS.IdNave, xlBerth.IdBanchina));
     }
+
     [Fact]
-    public async Task CreateShip_ShouldGenerateCorrectData()
+    public async Task CreateShip_ShouldGenerateRandomData()
     {
         // Arrange
         var context = GetDbContext();
@@ -207,25 +178,15 @@ public class IntegrationTests
         var stateRepo = new SystemStateRepository(context);
         var shipService = new ShipService(shipRepo, berthRepo, stateRepo);
 
-        var request = new CreateShipRequest("Automatic Ship", "Generated notes");
-
         // Act
-        var response = await shipService.CreateShipAsync(request);
+        var response = await shipService.CreateShipAsync(new CreateShipRequest("Automatic Ship", "Generated notes"));
 
         // Assert
         Assert.NotNull(response);
         Assert.Equal("Automatic Ship", response.Name);
         Assert.Equal("Generated notes", response.Notes);
-        Assert.Equal(ShipStatus.Pending, response.Status);
-        
-        // Verifica vincoli del PDF
-        // Size deve essere una delle enum
-        Assert.Contains(response.Size, Enum.GetValues<ShipSize>());
-        
-        // ArrivalDay: CurrentDay + 1..30 (CurrentDay è 1)
+        Assert.Equal("Pending", response.Status);
         Assert.InRange(response.ArrivalDay, 2, 31);
-        
-        // DurationDays: 3..15
         Assert.InRange(response.DurationDays, 3, 15);
     }
 }

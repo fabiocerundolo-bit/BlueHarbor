@@ -4,6 +4,7 @@ namespace BlueHarbor.Application.Interfaces;
 
 public interface IShipService
 {
+    Task<IEnumerable<ShipDto>> GetAllShipsAsync();
     Task<ShipResponseDto> CreateShipAsync(CreateShipRequest request);
     Task<AssignmentDto> AssignBerthAsync(int shipId, int berthId);
 }
@@ -23,6 +24,7 @@ public interface ITimeManagementService
 public interface ISchedulerService
 {
     Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync();
+    Task<IEnumerable<BerthDto>> GetBerthsAsync();
     Task<AssignmentResponseDto> AssignShipToBerthAsync(int shipId, int berthId);
 }
 

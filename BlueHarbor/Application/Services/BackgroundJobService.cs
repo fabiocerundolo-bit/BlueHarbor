@@ -8,19 +8,10 @@ public class BackgroundJobService(IShipRepository shipRepository) : IBackgroundJ
 {
     public async Task ProcessDepartedShipsAsync(int currentDay)
     {
-        var assignedShips = await shipRepository.GetByStatusAsync(ShipStatus.Assigned);
+        var assignedShips = await shipRepository.GetByStatusAsync("Assigned");
         
-        var departedShips = assignedShips.Where(s => s.StartDay.HasValue && 
-                                                     (s.StartDay.Value + s.DurationDays - 1) < currentDay).ToList();
-
-        if (departedShips.Any())
-        {
-            foreach (var ship in departedShips)
-            {
-                ship.Status = ShipStatus.Departed;
-            }
-
-            await shipRepository.UpdateRangeAsync(departedShips);
-        }
+        // Dobbiamo caricare le occupazioni per calcolare se sono partite
+        // La logica è stata spostata nel repository per efficienza
+        await shipRepository.UpdateAssignedShipsToDepartedAsync(currentDay);
     }
 }
