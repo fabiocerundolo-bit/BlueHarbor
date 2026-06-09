@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+
+  # ── SQL Server ────────────────────────────────────────────────────────────
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: blueharbor-db
+    environment:
+      SA_PASSWORD: "BlueHarbor_P@ss1"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'BlueHarbor_P@ss1' -Q 'SELECT 1' -No"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Backend ASP.NET Core (.NET 10) ────────────────────────────────────────
+  api:
+    build:
+      context: .           # root del repository (contiene BlueHarbor/ e BlueHarbor.sln)
+      dockerfile: BlueHarbor/Dockerfile
+    image: blueharbor-api:latest
+    container_name: blueharbor-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: >
+        Server=blueharbor-db,1433;Database=BlueHarborDb;
+        User Id=sa;Password=BlueHarbor_P@ss1;
+        TrustServerCertificate=True;MultipleActiveResultSets=true
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── Frontend React + Nginx ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend   # contiene package.json, src/, nginx.conf
+      dockerfile: Dockerfile
+    image: blueharbor-frontend:latest
+    container_name: blueharbor-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  sqldata:
