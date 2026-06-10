@@ -110,8 +110,12 @@ export function AppProvider({ children }) {
       const data = await api.advanceDay(roleRef.current)
       setCurrentDay(data.newCurrentDay)
 
-      // Quando il giorno avanza, aggiorna i dati relativi al ruolo corrente
-      // per mostrare subito lo stato aggiornato (es. navi passate a "Departed")
+      // Attende 700ms per dare tempo al job Hangfire in background di completare
+      // l'aggiornamento degli stati delle navi (es. Assigned -> Departed)
+      // prima di ricaricare i dati dal backend
+      await new Promise(resolve => setTimeout(resolve, 700))
+
+      // Aggiorna i dati relativi al ruolo corrente per mostrare lo stato aggiornato
       if (roleRef.current === 'Operatore') {
         await refreshShips()
       } else if (roleRef.current === 'Scheduler') {
