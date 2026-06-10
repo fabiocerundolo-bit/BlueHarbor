@@ -3,6 +3,10 @@ import Header from './components/Header'
 import OperatorPage from './pages/OperatorPage'
 import SchedulerPage from './pages/SchedulerPage'
 
+/**
+ * Componente per la visualizzazione di un banner rosso globale
+ * qualora si verifichino errori durante le chiamate API del porto.
+ */
 function ErrorBanner() {
   const { error, clearError } = useApp()
   if (!error) return null
@@ -25,16 +29,28 @@ function ErrorBanner() {
   )
 }
 
+/**
+ * Componente principale dell'applicazione React.
+ * Gestisce la struttura del layout principale, il caricamento condizionale delle viste
+ * a seconda del ruolo attivo dell'utente (Operatore vs Scheduler) e la barra di navigazione/footer.
+ */
 export default function App() {
   const { role } = useApp()
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Intestazione contenente il cambio ruolo e l'avanzamento giorno */}
       <Header />
+      
+      {/* Banner di notifica errori globale */}
       <ErrorBanner />
+      
+      {/* Sezione principale del layout: commuta le viste in base al ruolo corrente */}
       <main className="flex-1 max-w-screen-2xl w-full mx-auto px-6 py-6">
         {role === 'Operatore' ? <OperatorPage /> : <SchedulerPage />}
       </main>
+      
+      {/* Footer informativo sul terminale BlueHarbor */}
       <footer className="border-t border-slate-100 bg-white mt-auto">
         <div className="max-w-screen-2xl mx-auto px-6 py-3 flex items-center justify-between text-xs text-slate-400">
           <span>BlueHarbor Terminal Operations &copy; {new Date().getFullYear()}</span>
@@ -42,7 +58,7 @@ export default function App() {
             role === 'Operatore'
               ? 'bg-amber-100 text-amber-700'
               : 'bg-blue-100 text-blue-700'
-          }`}>
+           }`}>
             Sessione: {role}
           </span>
         </div>
@@ -50,3 +66,4 @@ export default function App() {
     </div>
   )
 }
+

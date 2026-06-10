@@ -1,24 +1,38 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import * as api from '../api/client'
 
+// Creazione del contesto globale per l'applicazione BlueHarbor
 const AppContext = createContext(null)
 
+/**
+ * Provider globale che avvolge l'intera applicazione React.
+ * Gestisce e sincronizza lo stato condiviso tra le pagine di "Operatore" e di "Scheduler".
+ */
 export function AppProvider({ children }) {
-  const [role, setRoleState] = useState('Operatore')
-  const [currentDay, setCurrentDay] = useState(null)
-  const [ships, setShips] = useState([])
-  const [pendingShips, setPendingShips] = useState([])
-  const [berths, setBerths] = useState([])
+  // ── STATO GLOBALE ──────────────────────────────────────────────────────
+  const [role, setRoleState] = useState('Operatore') // Ruolo attivo dell'utente ('Operatore' o 'Scheduler')
+  const [currentDay, setCurrentDay] = useState(null)  // Giorno virtuale corrente del porto
+  const [ships, setShips] = useState([])             // Elenco di tutte le navi registrate (usato dall'operatore)
+  const [pendingShips, setPendingShips] = useState([]) // Navi in attesa di assegnazione (usato dallo scheduler)
+  const [berths, setBerths] = useState([])           // Banchine ed occupazioni pianificate (usato dallo scheduler)
+  
+  // Stati di caricamento per l'interfaccia utente (Loading States)
   const [dayLoading, setDayLoading] = useState(false)
   const [shipsLoading, setShipsLoading] = useState(false)
   const [berthsLoading, setBerthsLoading] = useState(false)
-  const [error, setError] = useState(null)
+  
+  const [error, setError] = useState(null)            // Ultimo messaggio d'errore catturato dall'API
+
+  // useRef per memorizzare il ruolo ed evitare dipendenze superflue nelle callback di useCallback
   const roleRef = useRef(role)
   roleRef.current = role
 
+  // Pulisce l'errore corrente visualizzato nel banner
   const clearError = useCallback(() => setError(null), [])
 
-  // ── Day ────────────────────────────────────────────────────────────────
+  // ── GESTIONE GIORNO DI SISTEMA ──────────────────────────────────────────
+  
+  // Recupera il giorno virtuale corrente dal backend
   const refreshDay = useCallback(async (r) => {
     try {
       const data = await api.fetchCurrentDay(r ?? roleRef.current)
@@ -28,6 +42,7 @@ export function AppProvider({ children }) {
     }
   }, [])
 
+  // Avanza il giorno corrente di 1 unità ed aggiorna lo stato locale
   const doAdvanceDay = useCallback(async () => {
     setDayLoading(true)
     clearError()
@@ -41,7 +56,9 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // ── Ships (Operatore) ─────────────────────────────────────────────────
+  // ── GESTIONE NAVI (Ruolo: Operatore) ────────────────────────────────────
+  
+  // Ricarica la lista completa di tutte le navi per l'Operatore
   const refreshShips = useCallback(async () => {
     setShipsLoading(true)
     clearError()
@@ -49,22 +66,23 @@ export function AppProvider({ children }) {
       const data = await api.fetchAllShips('Operatore')
       setShips(data)
     } catch (e) {
-      // Graceful: endpoint may not exist yet
       setError(e.message)
     } finally {
       setShipsLoading(false)
     }
   }, [clearError])
 
+  // Registra una nuova nave inviando i dati al backend e inserendola in cima alla lista locale
   const doCreateShip = useCallback(async (name, notes) => {
     clearError()
     const ship = await api.createShip('Operatore', { name, notes })
-    // Prepend to local list without needing a full refresh
     setShips((prev) => [ship, ...prev])
     return ship
   }, [clearError])
 
-  // ── Scheduler ─────────────────────────────────────────────────────────
+  // ── GESTIONE PIANIFICAZIONE (Ruolo: Scheduler) ──────────────────────────
+  
+  // Ricarica la lista delle sole navi in attesa di attracco
   const refreshPendingShips = useCallback(async () => {
     clearError()
     try {
@@ -75,6 +93,7 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
+  // Ricarica la griglia delle banchine con le rispettive prenotazioni
   const refreshBerths = useCallback(async () => {
     setBerthsLoading(true)
     clearError()
@@ -88,6 +107,7 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
+  // Esegue l'assegnazione di una nave a una banchina e riaggiorna le liste pendenti e banchine
   const doAssignShip = useCallback(async (shipId, berthId) => {
     clearError()
     const result = await api.assignShip('Scheduler', shipId, berthId)
@@ -95,7 +115,9 @@ export function AppProvider({ children }) {
     return result
   }, [clearError, refreshPendingShips, refreshBerths])
 
-  // ── Role switch ────────────────────────────────────────────────────────
+  // ── CAMBIO DI RUOLO (Sincronizzazione Dati) ─────────────────────────────
+  
+  // Gestisce lo switch di ruolo tra Operatore e Scheduler, forzando il caricamento dei dati corretti
   const setRole = useCallback((r) => {
     setRoleState(r)
     clearError()
@@ -107,7 +129,7 @@ export function AppProvider({ children }) {
     }
   }, [clearError, refreshDay, refreshShips, refreshPendingShips, refreshBerths])
 
-  // ── Bootstrap ─────────────────────────────────────────────────────────
+  // ── BOOTSTRAP INIZIALE ──────────────────────────────────────────────────
   useEffect(() => {
     refreshDay()
     refreshShips()
@@ -139,8 +161,12 @@ export function AppProvider({ children }) {
   )
 }
 
+/**
+ * Hook personalizzato per consumare il contesto dell'applicazione in modo sicuro.
+ */
 export const useApp = () => {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }
+
