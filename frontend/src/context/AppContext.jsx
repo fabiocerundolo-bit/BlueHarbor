@@ -42,20 +42,6 @@ export function AppProvider({ children }) {
     }
   }, [])
 
-  // Avanza il giorno corrente di 1 unità ed aggiorna lo stato locale
-  const doAdvanceDay = useCallback(async () => {
-    setDayLoading(true)
-    clearError()
-    try {
-      const data = await api.advanceDay(roleRef.current)
-      setCurrentDay(data.newCurrentDay)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setDayLoading(false)
-    }
-  }, [clearError])
-
   // ── GESTIONE NAVI (Ruolo: Operatore) ────────────────────────────────────
   
   // Ricarica la lista completa di tutte le navi per l'Operatore
@@ -114,6 +100,29 @@ export function AppProvider({ children }) {
     await Promise.all([refreshPendingShips(), refreshBerths()])
     return result
   }, [clearError, refreshPendingShips, refreshBerths])
+
+  // Avanza il giorno corrente di 1 unità ed aggiorna lo stato locale
+  // Definito dopo le funzioni di aggiornamento in quanto le utilizza come dipendenze
+  const doAdvanceDay = useCallback(async () => {
+    setDayLoading(true)
+    clearError()
+    try {
+      const data = await api.advanceDay(roleRef.current)
+      setCurrentDay(data.newCurrentDay)
+
+      // Quando il giorno avanza, aggiorna i dati relativi al ruolo corrente
+      // per mostrare subito lo stato aggiornato (es. navi passate a "Departed")
+      if (roleRef.current === 'Operatore') {
+        await refreshShips()
+      } else if (roleRef.current === 'Scheduler') {
+        await Promise.all([refreshPendingShips(), refreshBerths()])
+      }
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setDayLoading(false)
+    }
+  }, [clearError, refreshShips, refreshPendingShips, refreshBerths])
 
   // ── CAMBIO DI RUOLO (Sincronizzazione Dati) ─────────────────────────────
   
