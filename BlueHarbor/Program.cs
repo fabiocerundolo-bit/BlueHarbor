@@ -1,21 +1,20 @@
 using BlueHarbor.Application.Interfaces;
 using BlueHarbor.Application.Services;
-using BlueHarbor.Components;
 using BlueHarbor.Infrastructure.Persistence;
 using BlueHarbor.Infrastructure.Repositories;
 using BlueHarbor.Security;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// builder.Services.AddRazorComponents()
-//    .AddInteractiveServerComponents();
-
+// ==========================================
+// 1. SERVIZI
+// ==========================================
 builder.Services.AddControllers();
-builder.Services.AddAntiforgery();
+builder.Services.AddOpenApi(); // ✅ OpenAPI nativo .NET 10 (NON AddSwaggerGen)
 
 // Database
 builder.Services.AddDbContext<BlueHarborDbContext>(options =>
@@ -26,12 +25,10 @@ builder.Services.AddScoped<IShipRepository, ShipRepository>();
 builder.Services.AddScoped<IBerthRepository, BerthRepository>();
 builder.Services.AddScoped<ISystemStateRepository, SystemStateRepository>();
 
-// Services
+// Services (SOLO quelli necessari)
 builder.Services.AddScoped<IShipService, ShipService>();
 builder.Services.AddScoped<ISchedulerService, SchedulerService>();
-builder.Services.AddScoped<ISystemService, SystemService>();
 builder.Services.AddScoped<ITimeManagementService, TimeManagementService>();
-builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 
 // Authentication & Authorization
 builder.Services.AddAuthentication("Mock")
@@ -46,15 +43,12 @@ builder.Services.AddHangfire(config => config
     .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddHangfireServer();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// 1. Definisci la policy CORS
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:5173") // Aggiungi le porte del tuo FE
+        policy.WithOrigins("http://localhost:3000", "http://localhost:5173")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -63,40 +57,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed Database
+// ==========================================
+// 2. SEED DATABASE
+// ==========================================
 await app.InitializeDatabaseAsync();
 
-// Configure the HTTP request pipeline.
+// ==========================================
+// 3. MIDDLEWARE PIPELINE
+// ==========================================
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    app.MapOpenApi(); // ✅ OpenAPI nativo
+    app.MapScalarApiReference(); // ✅ UI Scalar (sostituisce SwaggerUI)
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
-
-// 2. Applica la policy CORS (DEVE stare prima di UseAuthorization)
 app.UseCors("AllowFrontend");
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapStaticAssets();
 app.MapControllers();
-
-// Fallback per SPA React
-app.MapFallbackToFile("index.html");
-
 app.UseHangfireDashboard("/hangfire");
 
 app.Run();

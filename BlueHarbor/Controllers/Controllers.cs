@@ -1,33 +1,48 @@
 ﻿using BlueHarbor.Application.DTOs;
 using BlueHarbor.Application.Interfaces;
 using BlueHarbor.Application.Security;
-using BlueHarbor.Domain.Enums;
 using BlueHarbor.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlueHarbor.Controllers;
 
+// ============================================================
+// SHIPS CONTROLLER - Ruolo: Operatore
+// ============================================================
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = Roles.Operatore)]
 public class ShipsController(IShipService shipService, IShipRepository shipRepository) : ControllerBase
 {
+    /// <summary>
+    /// Recupera tutte le navi registrate nel sistema.
+    /// Include informazioni sulla banchina assegnata (se presente).
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllShips()
     {
-        var ships = await shipRepository.GetAllShipsAsync(); // ← Repository, non Service
+        // ✅ Chiama direttamente il repository (non il service)
+        // perché GetAllShipsAsync è una query semplice senza logica di business
+        var ships = await shipRepository.GetAllShipsAsync();
         return Ok(ships);
     }
 
+    /// <summary>
+    /// Registra una nuova nave nel sistema.
+    /// Dimensione, giorno di arrivo e durata vengono generati automaticamente.
+    /// </summary>
+    /// <param name="request">Dati della nave (Name obbligatorio, Notes opzionale)</param>
+    /// <returns>La nave creata con i dati generati</returns>
+    /// <response code="201">Nave creata con successo</response>
+    /// <response code="400">Dati di input non validi (es. nome vuoto o troppo corto)</response>
     [HttpPost]
     public async Task<IActionResult> CreateShip([FromBody] CreateShipRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Il nome della nave è obbligatorio.");
-        }
-
+        // ✅ La validazione è gestita automaticamente da [ApiController]
+        // tramite le Data Annotations su CreateShipRequest.
+        // Se il ModelState è invalido, ASP.NET restituisce 400 automaticamente.
+        
         try
         {
             var ship = await shipService.CreateShipAsync(request);
@@ -39,6 +54,13 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
         }
     }
 
+    /// <summary>
+    /// Recupera i dettagli di una singola nave tramite ID.
+    /// </summary>
+    /// <param name="id">ID della nave</param>
+    /// <returns>Dettagli della nave</returns>
+    /// <response code="200">Nave trovata</response>
+    /// <response code="404">Nave non trovata</response>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetShip(int id)
     {
@@ -48,11 +70,17 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
     }
 }
 
+// ============================================================
+// SCHEDULER CONTROLLER - Ruolo: Scheduler
+// ============================================================
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/scheduler")]
 [Authorize(Roles = Roles.Scheduler)]
 public class SchedulerController(ISchedulerService schedulerService) : ControllerBase
 {
+    /// <summary>
+    /// Recupera l'elenco di tutte le banchine con le relative occupazioni.
+    /// </summary>
     [HttpGet("berths")]
     public async Task<IActionResult> GetBerths()
     {
@@ -60,6 +88,9 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
         return Ok(berths);
     }
 
+    /// <summary>
+    /// Recupera l'elenco delle navi in stato "Pending" da assegnare.
+    /// </summary>
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingShips()
     {
@@ -67,6 +98,15 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
         return Ok(ships);
     }
 
+    /// <summary>
+    /// Assegna una nave a una banchina specifica.
+    /// Calcola automaticamente il primo slot temporale disponibile.
+    /// </summary>
+    /// <param name="request">ShipId e BerthId</param>
+    /// <returns>Dettagli dell'assegnazione (giorni di inizio/fine, nuovo stato)</returns>
+    /// <response code="200">Assegnazione completata</response>
+    /// <response code="400">Dimensione incompatibile o nave non in stato Pending</response>
+    /// <response code="404">Nave o banchina non trovata</response>
     [HttpPost("assign")]
     public async Task<IActionResult> AssignShip([FromBody] AssignShipRequest request)
     {
@@ -90,13 +130,19 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
     }
 }
 
+// ============================================================
+// SYSTEM CONTROLLER - Ruolo: Entrambi (Operatore e Scheduler)
+// ============================================================
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/system")]
 [Authorize]
 public class SystemController(
     ITimeManagementService timeManagementService,
     ISystemStateRepository systemStateRepository) : ControllerBase
 {
+    /// <summary>
+    /// Recupera il giorno virtuale corrente del sistema.
+    /// </summary>
     [HttpGet("day")]
     public async Task<IActionResult> GetCurrentDay()
     {
@@ -104,6 +150,10 @@ public class SystemController(
         return Ok(new { currentDay = state.CurrentDay });
     }
 
+    /// <summary>
+    /// Avanza il giorno virtuale di 1 unità.
+    /// Attiva in background il job Hangfire per aggiornare le navi partite.
+    /// </summary>
     [HttpPost("next-day")]
     public async Task<IActionResult> NextDay()
     {

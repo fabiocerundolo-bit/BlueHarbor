@@ -172,3 +172,14 @@ C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor\BlueHarbor.Tests\bin\Debug\net
 C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor\BlueHarbor.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor\BlueHarbor.Tests\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.sourcelink.json
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\bin\Debug\net10.0\.msCoverageSourceRootsMapping_BlueHarbor.Tests
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\bin\Debug\net10.0\CoverletSourceRootsMapping_BlueHarbor.Tests
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.csproj.AssemblyReference.cache
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.AssemblyInfoInputs.cache
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.AssemblyInfo.cs
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.csproj.CoreCompileInputs.cache
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.sourcelink.json
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.dll
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\refint\BlueHarbor.Tests.dll
+C:\Users\fabio.cerundolo\RiderProjects\BlueHarbor-docker\BlueHarbor.Tests\obj\Debug\net10.0\BlueHarbor.Tests.pdb

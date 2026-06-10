@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {}
+    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {
+    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
+        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
         "projectName": "BlueHarbor.Tests",
-        "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
+        "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
         "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor.Tests\\obj\\",
+        "outputPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -24,10 +24,11 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
-                "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj"
+              "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj": {
+                "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj"
               }
             }
           }
@@ -46,6 +47,7 @@
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.EntityFrameworkCore.InMemory": {
@@ -367,14 +369,14 @@
         }
       }
     },
-    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
+    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj",
         "projectName": "BlueHarbor",
-        "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+        "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj",
         "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor\\BlueHarbor\\obj\\",
+        "outputPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -387,6 +389,7 @@
         },
         "frameworks": {
           "net10.0": {
+            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -405,6 +408,7 @@
       },
       "frameworks": {
         "net10.0": {
+          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "Hangfire": {
@@ -415,11 +419,9 @@
               "target": "Package",
               "version": "[1.8.23, )"
             },
-            "Microsoft.AspNetCore.App.Internal.Assets": {
-              "suppressParent": "All",
+            "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
-              "version": "[10.0.8, )",
-              "autoReferenced": true
+              "version": "[10.0.9, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -431,13 +433,9 @@
               "target": "Package",
               "version": "[10.0.8, )"
             },
-            "Microsoft.OpenApi": {
+            "Scalar.AspNetCore": {
               "target": "Package",
-              "version": "[3.6.0, )"
-            },
-            "Swashbuckle.AspNetCore": {
-              "target": "Package",
-              "version": "[10.2.1, )"
+              "version": "[2.16.2, )"
             }
           },
           "imports": [

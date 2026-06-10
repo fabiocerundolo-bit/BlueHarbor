@@ -1,9 +1,16 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using BlueHarbor.Domain.Enums;
 
 namespace BlueHarbor.Application.DTOs;
 
-public record CreateShipRequest(string Name, string? Notes);
+public record CreateShipRequest(
+    [Required(ErrorMessage = "Il nome della nave è obbligatorio.")]
+    [MinLength(3, ErrorMessage = "Il nome deve avere almeno 3 caratteri.")]
+    [MaxLength(100, ErrorMessage = "Il nome non può superare i 100 caratteri.")]
+    string Name, 
+    [MaxLength(500, ErrorMessage = "Le note non possono superare i 500 caratteri.")]
+    string? Notes);
 
 public record ShipDto(
     [property: JsonPropertyName("id")] int IdNave,
@@ -36,7 +43,12 @@ public record PendingShipDto(
     int DurationDays
 );
 
-public record AssignShipRequest(int ShipId, int BerthId);
+public record AssignShipRequest(
+    [Range(1, int.MaxValue, ErrorMessage ="L'ID della nave non è valido.")]
+    int ShipId, 
+    [Range(1, int.MaxValue, ErrorMessage ="L'ID della banchina non è valido.")]
+    int BerthId
+    );
 
 public record AssignmentResponseDto(
     int ShipId,

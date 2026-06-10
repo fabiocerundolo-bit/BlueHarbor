@@ -29,7 +29,7 @@ services:
     image: blueharbor-api:latest
     container_name: blueharbor-api
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development #Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: >
         Server=blueharbor-db,1433;Database=BlueHarborDb;
