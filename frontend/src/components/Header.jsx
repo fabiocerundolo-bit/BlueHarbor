@@ -14,9 +14,11 @@ export default function Header() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <svg className="w-7 h-7 opacity-90" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-1 5v1H7a1 1 0 0 0 0 2h4v7.27A7.002 7.002 0 0 1 5.08 13H7a1 1 0 0 0 0-2H3a1 1 0 0 0-1 1 9 9 0 0 0 18 0 1 1 0 0 0-1-1h-4a1 1 0 0 0 0 2h1.92A7.002 7.002 0 0 1 13 19.27V12h4a1 1 0 0 0 0-2h-4V9a1 1 0 0 0-2 0z"/>
-          </svg>
+          <img
+            src="Logo.svg"
+            alt="Icona porto"
+            className="w-7 h-7 opacity-90"
+          />
           <div>
             <span className="text-lg font-bold tracking-tight">BlueHarbor</span>
             <span className="text-navy-200 text-xs ml-2 font-normal hidden sm:inline">Terminal Operations</span>
@@ -44,8 +46,8 @@ export default function Header() {
           >
             {dayLoading ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -60,21 +62,19 @@ export default function Header() {
         <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 flex-shrink-0">
           <button
             onClick={() => setRole('Operatore')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
-              role === 'Operatore'
-                ? 'bg-white text-navy shadow-sm'
-                : 'text-white/70 hover:text-white hover:bg-white/10'
-            }`}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${role === 'Operatore'
+              ? 'bg-white text-navy shadow-sm'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
           >
             Operatore
           </button>
           <button
             onClick={() => setRole('Scheduler')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
-              role === 'Scheduler'
-                ? 'bg-white text-navy shadow-sm'
-                : 'text-white/70 hover:text-white hover:bg-white/10'
-            }`}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${role === 'Scheduler'
+              ? 'bg-white text-navy shadow-sm'
+              : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
           >
             Scheduler
           </button>
