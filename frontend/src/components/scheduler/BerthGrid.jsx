@@ -136,6 +136,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
                     return (
                       <div
                         key={berth.id}
+                        data-testid={canAssign ? 'berth-clickable' : 'berth-row'}
                         className={`flex border-b border-slate-100 ${
                           canAssign
                             ? 'cursor-pointer hover:bg-harbor-light ring-inset ring-2 ring-harbor-accent/30'

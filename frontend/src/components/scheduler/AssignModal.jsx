@@ -18,6 +18,7 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
       onClose()
     } catch (err) {
       setError(err.message)
+    } finally {
       setLoading(false)
     }
   }

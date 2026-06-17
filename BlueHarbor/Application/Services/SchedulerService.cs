@@ -64,7 +64,7 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
         // 5. Aggiorna lo stato della nave a "Assigned"
         ship.Stato = "Assigned";
 
-        // 6. Crea il record di occupazione sul database collegando nave e banchina
+        // 6. Crea il record di occupazione e salva entrambe le modifiche in una sola transazione
         var occupazione = new Occupazione
         {
             IdNave = ship.IdNave,
@@ -72,9 +72,8 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
             GiornoInizio = startDay,
             IdUtente = 1 // Default Admin
         };
-        
-        await shipRepository.AddAssignmentAsync(occupazione);
-        await shipRepository.UpdateAsync(ship);
+
+        await shipRepository.AddAssignmentAndUpdateShipAsync(occupazione, ship);
 
         return new AssignmentResponseDto(ship.IdNave, berth.IdBanchina, startDay, endDay, ship.Stato);
     }

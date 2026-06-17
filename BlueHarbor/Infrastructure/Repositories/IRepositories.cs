@@ -51,6 +51,11 @@ public interface IShipRepository
     Task AddAssignmentAsync(Occupazione assignment);
 
     /// <summary>
+    /// Salva occupation e aggiornamento dello stato nave in un'unica transazione atomica.
+    /// </summary>
+    Task AddAssignmentAndUpdateShipAsync(Occupazione assignment, Nave ship);
+
+    /// <summary>
     /// Trova le navi assegnate la cui sosta è terminata al giorno specificato e ne aggiorna lo stato in "Departed".
     /// </summary>
     Task<int> UpdateAssignedShipsToDepartedAsync(int currentDay);
