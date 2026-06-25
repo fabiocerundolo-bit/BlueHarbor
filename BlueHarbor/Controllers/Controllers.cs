@@ -12,12 +12,13 @@ namespace BlueHarbor.Controllers;
 // ============================================================
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = Roles.Operatore)]
+[Authorize(Roles = Roles.Operatore + "," + Roles.Scheduler)]
 public class ShipsController(IShipService shipService, IShipRepository shipRepository) : ControllerBase
 {
     /// <summary>
     /// Recupera tutte le navi registrate nel sistema.
     /// Include informazioni sulla banchina assegnata (se presente).
+    /// Accessibile sia all'Operatore che allo Scheduler.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllShips()
@@ -37,6 +38,7 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
     /// <response code="201">Nave creata con successo</response>
     /// <response code="400">Dati di input non validi (es. nome vuoto o troppo corto)</response>
     [HttpPost]
+    [Authorize(Roles = Roles.Operatore)]
     public async Task<IActionResult> CreateShip([FromBody] CreateShipRequest request)
     {
         // ✅ La validazione è gestita automaticamente da [ApiController]
@@ -62,6 +64,7 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
     /// <response code="200">Nave trovata</response>
     /// <response code="404">Nave non trovata</response>
     [HttpGet("{id}")]
+    [Authorize(Roles = Roles.Operatore)]
     public async Task<IActionResult> GetShip(int id)
     {
         var ship = await shipRepository.GetByIdAsync(id);

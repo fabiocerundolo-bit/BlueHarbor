@@ -28,6 +28,10 @@ export default function SchedulerPage() {
     setLastAssignment(result)
     setSelectedShip(null)
     setModalBerth(null)
+    // I dati vengono già aggiornati (con await) da doAssignShip in AppContext.
+    // Non richiamiamo refreshPendingShips()/refreshBerths() qui per evitare
+    // race conditions: le chiamate senza await potrebbero sovrascrivere
+    // i dati freschi con dati obsoleti.
   }
 
   return (

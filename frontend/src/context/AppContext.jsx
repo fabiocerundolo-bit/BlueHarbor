@@ -10,17 +10,21 @@ const AppContext = createContext(null)
  */
 export function AppProvider({ children }) {
   // ── STATO GLOBALE ──────────────────────────────────────────────────────
-  const [role, setRoleState] = useState('Operatore') // Ruolo attivo dell'utente ('Operatore' o 'Scheduler')
+
+  // Ruolo attivo: viene letto da localStorage per sopravvivere ai refresh di pagina
+  const [role, setRoleState] = useState(
+    () => localStorage.getItem('bh_role') ?? 'Operatore'
+  )
   const [currentDay, setCurrentDay] = useState(null)  // Giorno virtuale corrente del porto
   const [ships, setShips] = useState([])             // Elenco di tutte le navi registrate (usato dall'operatore)
   const [pendingShips, setPendingShips] = useState([]) // Navi in attesa di assegnazione (usato dallo scheduler)
   const [berths, setBerths] = useState([])           // Banchine ed occupazioni pianificate (usato dallo scheduler)
-  
+
   // Stati di caricamento per l'interfaccia utente (Loading States)
   const [dayLoading, setDayLoading] = useState(false)
   const [shipsLoading, setShipsLoading] = useState(false)
   const [berthsLoading, setBerthsLoading] = useState(false)
-  
+
   const [error, setError] = useState(null)            // Ultimo messaggio d'errore catturato dall'API
 
   // useRef per memorizzare il ruolo ed evitare dipendenze superflue nelle callback di useCallback
@@ -31,7 +35,7 @@ export function AppProvider({ children }) {
   const clearError = useCallback(() => setError(null), [])
 
   // ── GESTIONE GIORNO DI SISTEMA ──────────────────────────────────────────
-  
+
   // Recupera il giorno virtuale corrente dal backend
   const refreshDay = useCallback(async (r) => {
     try {
@@ -43,13 +47,14 @@ export function AppProvider({ children }) {
   }, [])
 
   // ── GESTIONE NAVI (Ruolo: Operatore) ────────────────────────────────────
-  
-  // Ricarica la lista completa di tutte le navi per l'Operatore
-  const refreshShips = useCallback(async () => {
+
+  // Ricarica la lista completa di tutte le navi.
+  // Accetta un ruolo opzionale: se non specificato usa il ruolo corrente (roleRef).
+  const refreshShips = useCallback(async (role) => {
     setShipsLoading(true)
     clearError()
     try {
-      const data = await api.fetchAllShips('Operatore')
+      const data = await api.fetchAllShips(role ?? roleRef.current)
       setShips(data)
     } catch (e) {
       setError(e.message)
@@ -67,7 +72,7 @@ export function AppProvider({ children }) {
   }, [clearError])
 
   // ── GESTIONE PIANIFICAZIONE (Ruolo: Scheduler) ──────────────────────────
-  
+
   // Ricarica la lista delle sole navi in attesa di attracco
   const refreshPendingShips = useCallback(async () => {
     clearError()
@@ -93,13 +98,16 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // Esegue l'assegnazione di una nave a una banchina e riaggiorna le liste pendenti e banchine
+  // Esegue l'assegnazione di una nave a una banchina.
+  // Aggiorna le liste dello scheduler (pending + banchine) e sincronizza anche la lista
+  // ships dell'operatore direttamente in state, senza fare una chiamata API con role sbagliato.
+  // Esegue l'assegnazione e ricarica tutte e tre le liste dal DB:
+  // pending ships, banchine e registro navi (usando il ruolo Scheduler, ora autorizzato su GET /api/ships).
   const doAssignShip = useCallback(async (shipId, berthId) => {
-    clearError()
     const result = await api.assignShip('Scheduler', shipId, berthId)
-    await Promise.all([refreshPendingShips(), refreshBerths()])
+    await Promise.all([refreshPendingShips(), refreshBerths(), refreshShips('Scheduler')])
     return result
-  }, [clearError, refreshPendingShips, refreshBerths])
+  }, [refreshPendingShips, refreshBerths, refreshShips])
 
   // Avanza il giorno corrente di 1 unità ed aggiorna lo stato locale
   // Definito dopo le funzioni di aggiornamento in quanto le utilizza come dipendenze
@@ -129,9 +137,11 @@ export function AppProvider({ children }) {
   }, [clearError, refreshShips, refreshPendingShips, refreshBerths])
 
   // ── CAMBIO DI RUOLO (Sincronizzazione Dati) ─────────────────────────────
-  
-  // Gestisce lo switch di ruolo tra Operatore e Scheduler, forzando il caricamento dei dati corretti
+
+  // Gestisce lo switch di ruolo tra Operatore e Scheduler, forzando il caricamento dei dati corretti.
+  // Persiste il ruolo scelto in localStorage per sopravvivere ai refresh di pagina.
   const setRole = useCallback((r) => {
+    localStorage.setItem('bh_role', r)
     setRoleState(r)
     clearError()
     refreshDay(r)
@@ -143,9 +153,15 @@ export function AppProvider({ children }) {
   }, [clearError, refreshDay, refreshShips, refreshPendingShips, refreshBerths])
 
   // ── BOOTSTRAP INIZIALE ──────────────────────────────────────────────────
+  // Carica i dati appropriati in base al ruolo già salvato in localStorage
   useEffect(() => {
     refreshDay()
-    refreshShips()
+    if (roleRef.current === 'Operatore') {
+      refreshShips()
+    } else {
+      refreshPendingShips()
+      refreshBerths()
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -182,4 +198,3 @@ export const useApp = () => {
   if (!ctx) throw new Error('useApp must be used within AppProvider')
   return ctx
 }
-

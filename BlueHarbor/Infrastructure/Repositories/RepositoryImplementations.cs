@@ -11,7 +11,10 @@ namespace BlueHarbor.Infrastructure.Repositories;
 /// </summary>
 public class ShipRepository(BlueHarborDbContext context) : IShipRepository
 {
-    public async Task<Nave?> GetByIdAsync(int id) => await context.Navi.FindAsync(id);
+    public async Task<Nave?> GetByIdAsync(int id) =>
+        await context.Navi
+            .Include(n => n.Dimensione)
+            .FirstOrDefaultAsync(n => n.IdNave == id);
 
     public async Task<IEnumerable<Nave>> GetByStatusAsync(string status) => 
         await context.Navi.Where(s => s.Stato == status).ToListAsync();

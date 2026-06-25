@@ -15,9 +15,11 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
     try {
       const result = await assignShip(ship.id, berth.id)
       onSuccess(result)
-      onClose()
+      // Non serve chiamare onClose() qui: onSuccess setta modalBerth=null
+      // che smonta il componente automaticamente.
     } catch (err) {
       setError(err.message)
+    } finally {
       setLoading(false)
     }
   }
