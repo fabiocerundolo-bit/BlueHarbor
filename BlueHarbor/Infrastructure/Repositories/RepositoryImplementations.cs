@@ -92,6 +92,13 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
         await context.SaveChangesAsync();
     }
 
+    public async Task AddAssignmentAndUpdateShipAsync(Occupazione assignment, Nave ship)
+    {
+        await context.Occupazioni.AddAsync(assignment);
+        context.Navi.Update(ship);
+        await context.SaveChangesAsync();
+    }
+
     /// <summary>
     /// Trova tutte le navi correntemente in stato "Assigned" che hanno esaurito la loro sosta in base
     /// al giorno corrente virtuale e ne aggiorna lo stato in "Departed".

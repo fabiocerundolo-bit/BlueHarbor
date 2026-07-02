@@ -9,8 +9,8 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-navy text-white shadow-lg">
-      <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+    <header className="bg-navy text-white shadow-lg sticky top-0 z-50">
+      <div className="w-[80%] mx-auto h-16 flex items-center justify-between gap-4">
 
         {/* Logo */}
         <div className="flex items-center gap-3 flex-shrink-0">
