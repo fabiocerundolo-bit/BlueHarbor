@@ -16,7 +16,7 @@ export default function Header() {
         <div className="flex items-center gap-3 flex-shrink-0">
           <img
             src="Logo.svg"
-            alt="Icona porto"
+            alt="Harbor icon"
             className="w-7 h-7 opacity-90"
           />
           <div>
@@ -31,7 +31,7 @@ export default function Header() {
             <svg className="w-4 h-4 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="text-xs text-blue-200 font-medium">Giorno Virtuale</span>
+            <span className="text-xs text-blue-200 font-medium">Virtual Day</span>
             <span className="text-xl font-bold tabular-nums">
               {currentDay !== null ? currentDay : '—'}
             </span>
@@ -61,13 +61,13 @@ export default function Header() {
         {/* Role selector */}
         <div className="flex items-center gap-1 bg-white/10 rounded-lg p-1 flex-shrink-0">
           <button
-            onClick={() => setRole('Operatore')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${role === 'Operatore'
+            onClick={() => setRole('Operator')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${role === 'Operator'
               ? 'bg-white text-navy shadow-sm'
               : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
           >
-            Operatore
+            Operator
           </button>
           <button
             onClick={() => setRole('Scheduler')}

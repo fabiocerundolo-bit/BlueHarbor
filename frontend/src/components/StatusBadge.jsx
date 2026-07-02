@@ -1,13 +1,13 @@
+const LABELS = {
+  Pending:  'Pending',
+  Assigned: 'Assigned',
+  Departed: 'Departed',
+}
+
 const STYLES = {
   Pending:  'bg-amber-100 text-amber-700 border border-amber-200',
   Assigned: 'bg-blue-100 text-blue-700 border border-blue-200',
   Departed: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-}
-
-const LABELS = {
-  Pending:  'In attesa',
-  Assigned: 'Assegnata',
-  Departed: 'Partita',
 }
 
 export default function StatusBadge({ status }) {

@@ -31,7 +31,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
-          <p className="text-sm text-slate-400">Caricamento banchine...</p>
+          <p className="text-sm text-slate-400">Loading berths...</p>
         </div>
       </div>
     )
@@ -55,25 +55,25 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
           <svg className="w-4 h-4 text-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
           </svg>
-          Tabellone Banchine
+          Berth Schedule
           <span className="text-xs font-normal text-slate-400 ml-1">
-            (giorni {startDay} – {endDay})
+            (days {startDay} – {endDay})
           </span>
         </h2>
         <button onClick={refreshBerths} className="btn-secondary py-1.5 text-xs flex items-center gap-1.5">
           <svg className={`w-3.5 h-3.5 ${berthsLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Aggiorna
+          Refresh
         </button>
       </div>
 
       {berths.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <p className="text-sm font-medium text-slate-400">Dati banchine non disponibili</p>
+            <p className="text-sm font-medium text-slate-400">Berth data unavailable</p>
             <p className="text-xs text-slate-300 mt-1">
-              L'endpoint <code className="bg-slate-100 px-1 rounded">GET /api/scheduler/berths</code> deve essere aggiunto al backend
+              The <code className="bg-slate-100 px-1 rounded">GET /api/scheduler/berths</code> endpoint must be added to the backend
             </p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
               {/* Berth label spacer */}
               <div style={{ width: LABEL_W, minWidth: LABEL_W }}
                 className="flex-shrink-0 px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide bg-slate-50 border-r border-slate-200">
-                Banchina
+                Berth
               </div>
               {/* Day numbers */}
               {Array.from({ length: totalDays }, (_, i) => startDay + i).map((day) => {
@@ -105,7 +105,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
                       }`}
                   >
                     {day}
-                    {isToday && <div className="text-[9px] leading-none opacity-70 mt-0.5">oggi</div>}
+                    {isToday && <div className="text-[9px] leading-none opacity-70 mt-0.5">today</div>}
                   </div>
                 )
               })}
@@ -123,10 +123,10 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
                       style={{ width: LABEL_W, minWidth: LABEL_W }}
                       className={`flex-shrink-0 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider ${sc.header} border-r`}
                     >
-                      Banchine {size}
+                      {size} Berths
                     </div>
                     <div className="flex-1 bg-slate-50/50 py-1.5 px-3 text-xs text-slate-400">
-                      {groupBerths.length} {groupBerths.length === 1 ? 'banchina' : 'banchine'}
+                      {groupBerths.length} {groupBerths.length === 1 ? 'berth' : 'berths'}
                     </div>
                   </div>
 
@@ -146,7 +146,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
                         }`}
                         style={{ height: ROW_H }}
                         onClick={() => canAssign && onBerthClick(berth)}
-                        title={canAssign ? `Assegna ${selectedShip.name} a ${berth.name}` : undefined}
+                        title={canAssign ? `Assign ${selectedShip.name} to ${berth.name}` : undefined}
                       >
                         {/* Berth label */}
                         <div
@@ -191,7 +191,7 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
                                     text-white text-xs font-medium truncate
                                     ${isDeparted ? 'bg-slate-400' : 'bg-navy hover:bg-navy-400'} transition-colors`}
                                   style={{ left, width, height: ROW_H - 12 }}
-                                  title={`${a.shipName} · giorni ${a.startDay}–${a.endDay}`}
+                                  title={`${a.shipName} · days ${a.startDay}–${a.endDay}`}
                                 >
                                   {width > 40 && (
                                     <span className="truncate">{a.shipName}</span>
@@ -211,20 +211,20 @@ export default function BerthGrid({ selectedShip, onBerthClick }) {
             <div className="flex items-center gap-6 px-4 py-3 border-t border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <div className="w-5 h-3 rounded bg-navy" />
-                Assegnata
+                Assigned
               </div>
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <div className="w-5 h-3 rounded bg-slate-400" />
-                Partita
+                Departed
               </div>
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
                 <div className="w-5 h-3 rounded bg-navy/5 border border-navy/20" />
-                Giorno corrente
+                Current day
               </div>
               {selectedShip && (
                 <div className="flex items-center gap-1.5 text-xs text-harbor-accent font-medium">
                   <span className="w-2 h-2 rounded-full bg-harbor-accent animate-pulse" />
-                  Banchine compatibili cliccabili
+                  Compatible berths are clickable
                 </div>
               )}
             </div>

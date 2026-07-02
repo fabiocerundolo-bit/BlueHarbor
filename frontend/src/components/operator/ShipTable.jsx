@@ -12,7 +12,7 @@ export default function ShipTable() {
           <svg className="w-4 h-4 text-navy" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          Registro Navi
+          Ship Registry
           {ships.length > 0 && (
             <span className="ml-1 bg-navy-50 text-navy text-xs font-semibold px-2 py-0.5 rounded-full">
               {ships.length}
@@ -30,7 +30,7 @@ export default function ShipTable() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Aggiorna
+          Refresh
         </button>
       </div>
 
@@ -41,7 +41,7 @@ export default function ShipTable() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
             </svg>
-            <p className="text-sm text-slate-400">Caricamento navi...</p>
+            <p className="text-sm text-slate-400">Loading ships...</p>
           </div>
         </div>
       ) : ships.length === 0 ? (
@@ -50,8 +50,8 @@ export default function ShipTable() {
             <svg className="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
             </svg>
-            <p className="text-sm font-medium text-slate-400">Nessuna nave registrata</p>
-            <p className="text-xs text-slate-300 mt-1">Usa il form per registrare la prima nave</p>
+            <p className="text-sm font-medium text-slate-400">No ships registered</p>
+            <p className="text-xs text-slate-300 mt-1">Use the form to register the first ship</p>
           </div>
         </div>
       ) : (
@@ -60,13 +60,13 @@ export default function ShipTable() {
             <thead>
               <tr>
                 <th className="table-header">#</th>
-                <th className="table-header">Nome</th>
-                <th className="table-header">Dim.</th>
-                <th className="table-header">Arrivo</th>
-                <th className="table-header">Durata</th>
-                <th className="table-header">Stato</th>
-                <th className="table-header">Banchina</th>
-                <th className="table-header">Note</th>
+                <th className="table-header">Name</th>
+                <th className="table-header">Size</th>
+                <th className="table-header">Arrival</th>
+                <th className="table-header">Duration</th>
+                <th className="table-header">Status</th>
+                <th className="table-header">Berth</th>
+                <th className="table-header">Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -79,11 +79,11 @@ export default function ShipTable() {
                   </td>
                   <td className="table-cell tabular-nums">
                     <span className={`font-medium ${currentDay !== null && ship.arrivalDay <= currentDay ? 'text-harbor-success' : 'text-slate-600'}`}>
-                      Giorno {ship.arrivalDay}
+                      Day {ship.arrivalDay}
                     </span>
                   </td>
                   <td className="table-cell tabular-nums">
-                    {ship.durationDays} gg
+                    {ship.durationDays} d
                   </td>
                   <td className="table-cell">
                     <StatusBadge status={ship.status} />
@@ -92,7 +92,7 @@ export default function ShipTable() {
                     {ship.assignedBerthId ? (
                       <span className="font-medium text-navy-400">
                         #{ship.assignedBerthId}
-                        {ship.startDay && ` · g.${ship.startDay}`}
+                        {ship.startDay && ` · d.${ship.startDay}`}
                       </span>
                     ) : (
                       <span className="text-slate-300">—</span>

@@ -1,38 +1,38 @@
 namespace BlueHarbor.Application.Security;
 
 /// <summary>
-/// Database mock contenente gli utenti abilitati all'accesso del sistema e i rispettivi ruoli.
-/// Utilizzato per simulare l'autenticazione tramite intestazioni HTTP.
+/// Mock database containing users enabled to access the system and their respective roles.
+/// Used to simulate authentication via HTTP headers.
 /// </summary>
 public static class MockUserDatabase
 {
-    // Mappa degli utenti fittizi e delle rispettive autorizzazioni di ruolo
+    // Map of mock users and their respective role authorizations
     private static readonly Dictionary<string, string> Users = new()
     {
-        { "operatore1", Roles.Operatore },
-        { "operatore2", Roles.Operatore },
+        { "operator1", Roles.Operator },
+        { "operator2", Roles.Operator },
         { "scheduler1", Roles.Scheduler },
         { "scheduler2", Roles.Scheduler }
     };
 
     /// <summary>
-    /// Recupera il ruolo associato a un determinato username.
+    /// Retrieves the role associated with a given username.
     /// </summary>
     public static string? GetRole(string username) 
         => Users.TryGetValue(username, out var role) ? role : null;
 
     /// <summary>
-    /// Restituisce la lista di tutti gli username validi nel sistema mock.
+    /// Returns the list of all valid usernames in the mock system.
     /// </summary>
     public static IEnumerable<string> GetValidUsernames() 
         => Users.Keys;
 }
 
 /// <summary>
-/// Definizione delle costanti per i ruoli di sicurezza supportati dall'applicazione.
+/// Definition of constants for the security roles supported by the application.
 /// </summary>
 public static class Roles
 {
-    public const string Operatore = "Operatore";
+    public const string Operator = "Operator";
     public const string Scheduler = "Scheduler";
 }

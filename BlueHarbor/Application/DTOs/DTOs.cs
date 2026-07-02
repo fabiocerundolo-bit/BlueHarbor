@@ -5,34 +5,34 @@ using BlueHarbor.Domain.Enums;
 namespace BlueHarbor.Application.DTOs;
 
 /// <summary>
-/// DTO di richiesta per la creazione di una nuova nave da parte dell'Operatore.
+/// Request DTO for creating a new ship by the Operator.
 /// </summary>
 public record CreateShipRequest(
-    [Required(ErrorMessage = "Il nome della nave è obbligatorio.")]
-    [MinLength(3, ErrorMessage = "Il nome deve avere almeno 3 caratteri.")]
-    [MaxLength(100, ErrorMessage = "Il nome non può superare i 100 caratteri.")]
+    [Required(ErrorMessage = "The ship name is required.")]
+    [MinLength(3, ErrorMessage = "The name must be at least 3 characters long.")]
+    [MaxLength(100, ErrorMessage = "The name cannot exceed 100 characters.")]
     string Name, 
-    [MaxLength(500, ErrorMessage = "Le note non possono superare i 500 caratteri.")]
+    [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
     string? Notes);
 
 /// <summary>
-/// Rappresentazione dettagliata di una nave, incluse le informazioni di sosta ed eventuale banchina assegnata.
+/// Detailed representation of a ship, including docking information and the assigned berth (if any).
 /// </summary>
 public record ShipDto(
-    [property: JsonPropertyName("id")] int IdNave,
-    [property: JsonPropertyName("name")] string NomeNave,
-    [property: JsonPropertyName("notes")] string? Note,
-    [property: JsonPropertyName("size")] string NomeDimensione,
-    [property: JsonPropertyName("arrivalDay")] int GiornoArrivo,
-    [property: JsonPropertyName("durationDays")] int DurataOccupazione,
-    [property: JsonPropertyName("status")] string Stato,
-    [property: JsonPropertyName("startDay")] int? GiornoInizio,
-    [property: JsonPropertyName("assignedBerthId")] int? IdBanchina,
-    [property: JsonPropertyName("assignedBerthName")] string? NomeBanchina
+    [property: JsonPropertyName("id")] int ShipId,
+    [property: JsonPropertyName("name")] string ShipName,
+    [property: JsonPropertyName("notes")] string? Notes,
+    [property: JsonPropertyName("size")] string SizeName,
+    [property: JsonPropertyName("arrivalDay")] int ArrivalDay,
+    [property: JsonPropertyName("durationDays")] int DurationDays,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("startDay")] int? StartDay,
+    [property: JsonPropertyName("assignedBerthId")] int? BerthId,
+    [property: JsonPropertyName("assignedBerthName")] string? BerthName
 );
 
 /// <summary>
-/// DTO restituito in seguito alla creazione corretta di una nave.
+/// DTO returned after a ship has been successfully created.
 /// </summary>
 public record ShipResponseDto(
     int Id,
@@ -45,7 +45,7 @@ public record ShipResponseDto(
 );
 
 /// <summary>
-/// Rappresenta una nave in attesa di pianificazione (in stato "Pending").
+/// Represents a ship waiting for scheduling (in "Pending" status).
 /// </summary>
 public record PendingShipDto(
     int Id,
@@ -56,17 +56,17 @@ public record PendingShipDto(
 );
 
 /// <summary>
-/// DTO di richiesta per assegnare una nave ad una banchina specifica.
+/// Request DTO for assigning a ship to a specific berth.
 /// </summary>
 public record AssignShipRequest(
-    [Range(1, int.MaxValue, ErrorMessage ="L'ID della nave non è valido.")]
+    [Range(1, int.MaxValue, ErrorMessage = "The ship ID is not valid.")]
     int ShipId, 
-    [Range(1, int.MaxValue, ErrorMessage ="L'ID della banchina non è valido.")]
+    [Range(1, int.MaxValue, ErrorMessage = "The berth ID is not valid.")]
     int BerthId
     );
 
 /// <summary>
-/// Risposta ad un'operazione di pianificazione completata con successo.
+/// Response for a successfully completed scheduling operation.
 /// </summary>
 public record AssignmentResponseDto(
     int ShipId,
@@ -77,22 +77,21 @@ public record AssignmentResponseDto(
 );
 
 /// <summary>
-/// DTO che sintetizza un singolo record di occupazione banchina.
+/// DTO summarising a single berth occupancy record.
 /// </summary>
 public record AssignmentDto(int ShipId, int BerthId, int StartDay, int EndDay);
 
 /// <summary>
-/// DTO per rappresentare una banchina e l'insieme delle sue prenotazioni/occupazioni temporali.
+/// DTO representing a berth and the set of its temporal occupancies.
 /// </summary>
 public record BerthDto(int Id, string Name, string Size, IEnumerable<BerthAssignmentDto> Assignments);
 
 /// <summary>
-/// DTO che descrive una specifica assegnazione per una banchina.
+/// DTO describing a specific assignment for a berth.
 /// </summary>
 public record BerthAssignmentDto(int Id, int ShipId, string ShipName, int StartDay, int EndDay, string Status);
 
 /// <summary>
-/// Risposta restituita al completamento dell'avanzamento del giorno virtuale di sistema.
+/// Response returned when the virtual system day has been successfully advanced.
 /// </summary>
 public record NextDayResponseDto(int NewCurrentDay);
-

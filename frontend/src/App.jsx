@@ -4,8 +4,8 @@ import OperatorPage from './pages/OperatorPage'
 import SchedulerPage from './pages/SchedulerPage'
 
 /**
- * Componente per la visualizzazione di un banner rosso globale
- * qualora si verifichino errori durante le chiamate API del porto.
+ * Component for displaying a global red banner
+ * when errors occur during harbor API calls.
  */
 function ErrorBanner() {
   const { error, clearError } = useApp()
@@ -30,40 +30,39 @@ function ErrorBanner() {
 }
 
 /**
- * Componente principale dell'applicazione React.
- * Gestisce la struttura del layout principale, il caricamento condizionale delle viste
- * a seconda del ruolo attivo dell'utente (Operatore vs Scheduler) e la barra di navigazione/footer.
+ * Main React application component.
+ * Manages the main layout structure, conditional view rendering
+ * based on the active user role (Operator vs Scheduler), and the navigation bar/footer.
  */
 export default function App() {
   const { role } = useApp()
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Intestazione contenente il cambio ruolo e l'avanzamento giorno */}
+      {/* Header containing role switching and day advancement */}
       <Header />
       
-      {/* Banner di notifica errori globale */}
+      {/* Global error notification banner */}
       <ErrorBanner />
       
-      {/* Sezione principale del layout: commuta le viste in base al ruolo corrente */}
+      {/* Main layout section: switches views based on the current role */}
       <main className="flex-1 w-[80%] mx-auto py-6">
-        {role === 'Operatore' ? <OperatorPage /> : <SchedulerPage />}
+        {role === 'Operator' ? <OperatorPage /> : <SchedulerPage />}
       </main>
       
-      {/* Footer informativo sul terminale BlueHarbor */}
+      {/* Informational footer for the BlueHarbor terminal */}
       <footer className="border-t border-slate-100 bg-white mt-auto">
         <div className="w-[80%] mx-auto py-3 flex items-center justify-between text-xs text-slate-400">
           <span>BlueHarbor Terminal Operations &copy; {new Date().getFullYear()}</span>
           <span className={`px-2 py-0.5 rounded-full font-medium ${
-            role === 'Operatore'
+            role === 'Operator'
               ? 'bg-amber-100 text-amber-700'
               : 'bg-blue-100 text-blue-700'
            }`}>
-            Sessione: {role}
+            Session: {role}
           </span>
         </div>
       </footer>
     </div>
   )
 }
-
