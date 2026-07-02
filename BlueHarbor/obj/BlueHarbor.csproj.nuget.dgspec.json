@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj": {}
+    "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {}
   },
   "projects": {
-    "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj": {
+    "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj",
+        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
         "projectName": "BlueHarbor",
-        "projectPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\BlueHarbor.csproj",
+        "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
         "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fabio.cerundolo\\RiderProjects\\BlueHarbor-docker\\BlueHarbor\\obj\\",
+        "outputPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -67,6 +67,10 @@
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
               "version": "[10.0.8, )"
+            },
+            "Microsoft.OpenApi": {
+              "target": "Package",
+              "version": "[2.7.5, )"
             },
             "Scalar.AspNetCore": {
               "target": "Package",
