@@ -3,49 +3,49 @@ using BlueHarbor.Application.DTOs;
 namespace BlueHarbor.Application.Interfaces;
 
 /// <summary>
-/// Interfaccia per il servizio di gestione delle navi (registrazione).
+/// Interface for the ship management service (registration).
 /// </summary>
 public interface IShipService
 {
     /// <summary>
-    /// Crea e registra una nuova nave nel sistema con dati generati in maniera casuale.
+    /// Creates and registers a new ship in the system with randomly generated attributes.
     /// </summary>
     Task<ShipResponseDto> CreateShipAsync(CreateShipRequest request);
 }
 
 /// <summary>
-/// Interfaccia per il servizio di gestione temporale e avanzamento giorno virtuale.
+/// Interface for the time management service and virtual day advancement.
 /// </summary>
 public interface ITimeManagementService
 {
     /// <summary>
-    /// Avanza il giorno virtuale di sistema di 1.
+    /// Advances the virtual system day by 1.
     /// </summary>
     Task<int> AdvanceDayAsync();
 
     /// <summary>
-    /// Processa le navi la cui occupazione scade nel giorno specificato per impostarle come "Departed".
+    /// Processes ships whose occupancy expires on the specified day and marks them as "Departed".
     /// </summary>
     Task ProcessDepartedShipsAsync(int currentDay);
 }
 
 /// <summary>
-/// Interfaccia per il servizio di pianificazione degli attracchi.
+/// Interface for the berth scheduling service.
 /// </summary>
 public interface ISchedulerService
 {
     /// <summary>
-    /// Restituisce la lista di navi in attesa di assegnazione.
+    /// Returns the list of ships waiting to be assigned.
     /// </summary>
     Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync();
 
     /// <summary>
-    /// Restituisce la lista di banchine con le rispettive occupazioni programmate.
+    /// Returns the list of berths with their respective scheduled occupancies.
     /// </summary>
     Task<IEnumerable<BerthDto>> GetBerthsAsync();
 
     /// <summary>
-    /// Assegna una nave pendente ad una determinata banchina.
+    /// Assigns a pending ship to a specific berth.
     /// </summary>
     Task<AssignmentResponseDto> AssignShipToBerthAsync(int shipId, int berthId);
 }

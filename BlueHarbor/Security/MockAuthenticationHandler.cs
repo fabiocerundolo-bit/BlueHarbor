@@ -8,8 +8,8 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 
 /// <summary>
-/// Gestore di autenticazione mock per simulare l'accesso degli utenti.
-/// Legge l'header personalizzato "X-Username" per identificare l'utente e il suo ruolo dal database mock.
+/// Mock authentication handler to simulate user access.
+/// Reads the custom "X-Username" header to identify the user and their role from the mock database.
 /// </summary>
 public class MockAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -20,27 +20,27 @@ public class MockAuthenticationHandler : AuthenticationHandler<AuthenticationSch
         : base(options, logger, encoder) { }
 
     /// <summary>
-    /// Esegue il controllo delle credenziali simulato verificando l'header HTTP "X-Username".
+    /// Performs simulated credential verification by checking the "X-Username" HTTP header.
     /// </summary>
-    /// <returns>Il risultato dell'autenticazione (Success, Fail o NoResult).</returns>
+    /// <returns>The authentication result (Success, Fail, or NoResult).</returns>
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        // Verifica se la richiesta contiene l'header X-Username
+        // Check whether the request contains the X-Username header
         if (!Request.Headers.TryGetValue("X-Username", out var usernameHeader))
         {
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         var username = usernameHeader.ToString();
-        // Recupera il ruolo associato a quell'username dal database utenti mock
+        // Retrieve the role associated with that username from the mock user database
         var role = MockUserDatabase.GetRole(username);
 
         if (string.IsNullOrEmpty(role))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Utente non riconosciuto."));
+            return Task.FromResult(AuthenticateResult.Fail("User not recognized."));
         }
 
-        // Genera i claim di identità con nome utente e ruolo per l'autorizzazione basata su ruoli di ASP.NET
+        // Generate identity claims with username and role for ASP.NET role-based authorization
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, username),

@@ -30,10 +30,9 @@ export default function SchedulerPage() {
     setLastAssignment(result)
     setSelectedShip(null)
     setModalBerth(null)
-    // I dati vengono già aggiornati (con await) da doAssignShip in AppContext.
-    // Non richiamiamo refreshPendingShips()/refreshBerths() qui per evitare
-    // race conditions: le chiamate senza await potrebbero sovrascrivere
-    // i dati freschi con dati obsoleti.
+    // Data is already refreshed (with await) by doAssignShip in AppContext.
+    // We do not call refreshPendingShips()/refreshBerths() here to avoid
+    // race conditions: non-awaited calls could overwrite fresh data with stale data.
   }
 
   return (
@@ -66,7 +65,7 @@ export default function SchedulerPage() {
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h1v11H4V10zm15 0h1v11h-1V10zm-5 0h1v11h-1V10zm-5 0h1v11h-1V10z" />
             </svg>
-            Vista Porto
+            Harbor View
           </button>
         </div>
       </div>
@@ -78,10 +77,10 @@ export default function SchedulerPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-emerald-800">Nave assegnata con successo</p>
+            <p className="text-sm font-semibold text-emerald-800">Ship assigned successfully</p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Giorno {lastAssignment.startDay} → Giorno {lastAssignment.endDay}
-              &nbsp;· Banchina #{lastAssignment.berthId}
+              Day {lastAssignment.startDay} → Day {lastAssignment.endDay}
+              &nbsp;· Berth #{lastAssignment.berthId}
             </p>
           </div>
           <button onClick={() => setLastAssignment(null)} className="text-emerald-400 hover:text-emerald-600">

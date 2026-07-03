@@ -1,4 +1,4 @@
-﻿namespace BlueHarbor.Infrastructure.Persistence;
+namespace BlueHarbor.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
 using BlueHarbor.Domain.Entities;
@@ -7,95 +7,124 @@ public class BlueHarborDbContext : DbContext
 {
     public BlueHarborDbContext(DbContextOptions<BlueHarborDbContext> options) : base(options) { }
 
-    public DbSet<Ruolo> Ruoli => Set<Ruolo>();
-    public DbSet<Dimensione> Dimensioni => Set<Dimensione>();
-    public DbSet<Utente> Utenti => Set<Utente>();
-    public DbSet<Banchina> Banchine => Set<Banchina>();
-    public DbSet<Nave> Navi => Set<Nave>();
-    public DbSet<Occupazione> Occupazioni => Set<Occupazione>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Size> Sizes => Set<Size>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Berth> Berths => Set<Berth>();
+    public DbSet<Ship> Ships => Set<Ship>();
+    public DbSet<Occupancy> Occupancies => Set<Occupancy>();
     public DbSet<SystemState> SystemStates => Set<SystemState>();
+    public DbSet<ListaNavi> ListaNavi => Set<ListaNavi>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Mappatura Nomi Tabelle
-        modelBuilder.Entity<Ruolo>().ToTable("Ruolo").HasKey(r => r.IdRuolo);
-        modelBuilder.Entity<Dimensione>().ToTable("Dimensione").HasKey(d => d.IdDimensione);
-        modelBuilder.Entity<Utente>().ToTable("Utente").HasKey(u => u.IdUtente);
-        modelBuilder.Entity<Banchina>().ToTable("Banchina").HasKey(b => b.IdBanchina);
-        modelBuilder.Entity<Nave>().ToTable("Nave").HasKey(n => n.IdNave);
-        modelBuilder.Entity<Occupazione>().ToTable("Occupazione").HasKey(o => o.IdOccupazione);
+        // Table Name Mappings
+        modelBuilder.Entity<Role>().ToTable("Ruolo").HasKey(r => r.RoleId);
+        modelBuilder.Entity<Size>().ToTable("Dimensione").HasKey(d => d.SizeId);
+        modelBuilder.Entity<User>().ToTable("Utente").HasKey(u => u.UserId);
+        modelBuilder.Entity<Berth>().ToTable("Banchina").HasKey(b => b.BerthId);
+        modelBuilder.Entity<Ship>().ToTable("Nave").HasKey(n => n.ShipId);
+        modelBuilder.Entity<Occupancy>().ToTable("Occupazione").HasKey(o => o.OccupancyId);
 
-        // 1. Configurazione SystemState (Singleton)
+        // 1. SystemState configuration (Singleton)
         modelBuilder.Entity<SystemState>()
             .HasData(new SystemState { Id = 1, CurrentDay = 1 });
 
-        // 2. Seed dei dati da SQLQuery2.sql
-        modelBuilder.Entity<Ruolo>().HasData(
-            new Ruolo { IdRuolo = 1, NomeRuolo = "Operatore" },
-            new Ruolo { IdRuolo = 2, NomeRuolo = "Scheduler" }
+        // 2. Seed data
+        modelBuilder.Entity<Role>().HasData(
+            new Role { RoleId = 1, RoleName = "Operator" },
+            new Role { RoleId = 2, RoleName = "Scheduler" }
         );
 
-        modelBuilder.Entity<Dimensione>().HasData(
-            new Dimensione { IdDimensione = 1, NomeDimensione = "XL" },
-            new Dimensione { IdDimensione = 2, NomeDimensione = "L" },
-            new Dimensione { IdDimensione = 3, NomeDimensione = "M" },
-            new Dimensione { IdDimensione = 4, NomeDimensione = "S" }
+        modelBuilder.Entity<Size>().HasData(
+            new Size { SizeId = 1, SizeName = "XL" },
+            new Size { SizeId = 2, SizeName = "L" },
+            new Size { SizeId = 3, SizeName = "M" },
+            new Size { SizeId = 4, SizeName = "S" }
         );
 
-        modelBuilder.Entity<Banchina>().HasData(
-            new Banchina { IdBanchina = 1, NomeBanchina = "Banchina XL1", IdDimensione = 1 },
-            new Banchina { IdBanchina = 2, NomeBanchina = "Banchina L1", IdDimensione = 2 },
-            new Banchina { IdBanchina = 3, NomeBanchina = "Banchina M1", IdDimensione = 3 },
-            new Banchina { IdBanchina = 4, NomeBanchina = "Banchina M2", IdDimensione = 3 },
-            new Banchina { IdBanchina = 5, NomeBanchina = "Banchina S1", IdDimensione = 4 },
-            new Banchina { IdBanchina = 6, NomeBanchina = "Banchina S2", IdDimensione = 4 },
-            new Banchina { IdBanchina = 7, NomeBanchina = "Banchina S3", IdDimensione = 4 },
-            new Banchina { IdBanchina = 8, NomeBanchina = "Banchina S4", IdDimensione = 4 }
+        modelBuilder.Entity<ListaNavi>().HasData(
+            new ListaNavi { IdListaNavi = 1, NomeNave = "MSC Splendida", FK_Id_Dimensione = 1 },
+            new ListaNavi { IdListaNavi = 2, NomeNave = "Costa Favolosa", FK_Id_Dimensione = 1 },
+            new ListaNavi { IdListaNavi = 3, NomeNave = "Norwegian Epic", FK_Id_Dimensione = 2 },
+            new ListaNavi { IdListaNavi = 4, NomeNave = "Celebrity Reflection", FK_Id_Dimensione = 2 },
+            new ListaNavi { IdListaNavi = 5, NomeNave = "Queen Mary 2", FK_Id_Dimensione = 3 },
+            new ListaNavi { IdListaNavi = 6, NomeNave = "Disney Dream", FK_Id_Dimensione = 3 },
+            new ListaNavi { IdListaNavi = 7, NomeNave = "Seabourn Odyssey", FK_Id_Dimensione = 4 },
+            new ListaNavi { IdListaNavi = 8, NomeNave = "Wind Star", FK_Id_Dimensione = 4 }
         );
 
-        // Seed un utente di default per i ruoli (opzionale, per permettere alle navi di avere un IdUtente)
-        modelBuilder.Entity<Utente>().HasData(
-            new Utente { IdUtente = 1, Nome = "Admin", Email = "admin@blueharbor.com", Password = "admin", IdRuolo = 1 }
+        modelBuilder.Entity<Berth>().HasData(
+            new Berth { BerthId = 1, BerthName = "Berth XL1", SizeId = 1 },
+            new Berth { BerthId = 2, BerthName = "Berth L1",  SizeId = 2 },
+            new Berth { BerthId = 3, BerthName = "Berth M1",  SizeId = 3 },
+            new Berth { BerthId = 4, BerthName = "Berth M2",  SizeId = 3 },
+            new Berth { BerthId = 5, BerthName = "Berth S1",  SizeId = 4 },
+            new Berth { BerthId = 6, BerthName = "Berth S2",  SizeId = 4 },
+            new Berth { BerthId = 7, BerthName = "Berth S3",  SizeId = 4 },
+            new Berth { BerthId = 8, BerthName = "Berth S4",  SizeId = 4 }
         );
 
-        // Relazioni
-        modelBuilder.Entity<Utente>()
-            .HasOne(u => u.Ruolo)
-            .WithMany()
-            .HasForeignKey(u => u.IdRuolo);
+        // Seed a default admin user (required for ships to have a UserId)
+        modelBuilder.Entity<User>().HasData(
+            new User { UserId = 1, Name = "Admin", Email = "admin@blueharbor.com", Password = "admin", RoleId = 1 }
+        );
 
-        modelBuilder.Entity<Banchina>()
-            .HasOne(b => b.Dimensione)
-            .WithMany()
-            .HasForeignKey(b => b.IdDimensione);
+        // Relationships
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Role)
+            .WithMany(r => r.Users)
+            .HasForeignKey(u => u.RoleId);
 
-        modelBuilder.Entity<Nave>()
-            .HasOne(n => n.Dimensione)
-            .WithMany()
-            .HasForeignKey(n => n.IdDimensione);
+        modelBuilder.Entity<Berth>()
+            .HasOne(b => b.Size)
+            .WithMany(s => s.Berths)
+            .HasForeignKey(b => b.SizeId);
 
-        modelBuilder.Entity<Nave>()
-            .HasOne(n => n.Utente)
-            .WithMany()
-            .HasForeignKey(n => n.IdUtente);
+        modelBuilder.Entity<ListaNavi>(entity =>
+        {
+            entity.ToTable("ListaNavi");
+            entity.HasKey(e => e.IdListaNavi);
 
-        modelBuilder.Entity<Occupazione>()
-            .HasOne(o => o.Nave)
-            .WithMany()
-            .HasForeignKey(o => o.IdNave)
+            entity.HasOne(e => e.Dimensione)
+                .WithMany(d => d.ListaNavi)
+                .HasForeignKey(e => e.FK_Id_Dimensione)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Navi)
+                .WithOne(n => n.ListaNavi)
+                .HasForeignKey(n => n.IdListaNavi)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Ship>()
+            .HasOne(n => n.User)
+            .WithMany(u => u.Ships)
+            .HasForeignKey(n => n.UserId);
+
+        modelBuilder.Entity<Ship>()
+            .HasOne(n => n.ListaNavi)
+            .WithMany(ln => ln.Navi)
+            .HasForeignKey(n => n.IdListaNavi)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Occupazione>()
-            .HasOne(o => o.Banchina)
-            .WithMany(b => b.Occupazioni)
-            .HasForeignKey(o => o.IdBanchina)
+        modelBuilder.Entity<Occupancy>()
+            .HasOne(o => o.Ship)
+            .WithMany(s => s.Occupancies)
+            .HasForeignKey(o => o.ShipId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Occupazione>()
-            .HasOne(o => o.Utente)
+        modelBuilder.Entity<Occupancy>()
+            .HasOne(o => o.Berth)
+            .WithMany(b => b.Occupancies)
+            .HasForeignKey(o => o.BerthId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Occupancy>()
+            .HasOne(o => o.User)
             .WithMany()
-            .HasForeignKey(o => o.IdUtente);
+            .HasForeignKey(o => o.UserId);
     }
 }

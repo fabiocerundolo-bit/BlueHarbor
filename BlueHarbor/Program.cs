@@ -11,10 +11,10 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// 1. SERVIZI
+// 1. SERVICES
 // ==========================================
 builder.Services.AddControllers();
-builder.Services.AddOpenApi(); // ✅ OpenAPI nativo .NET 10 (NON AddSwaggerGen)
+builder.Services.AddOpenApi(); // ✅ Native .NET 10 OpenAPI (NOT AddSwaggerGen)
 
 // Database
 builder.Services.AddDbContext<BlueHarborDbContext>(options =>
@@ -22,10 +22,11 @@ builder.Services.AddDbContext<BlueHarborDbContext>(options =>
 
 // Repositories
 builder.Services.AddScoped<IShipRepository, ShipRepository>();
+builder.Services.AddScoped<IListaNaviRepository, ListaNaviRepository>();
 builder.Services.AddScoped<IBerthRepository, BerthRepository>();
 builder.Services.AddScoped<ISystemStateRepository, SystemStateRepository>();
 
-// Services (SOLO quelli necessari)
+// Services (only those required)
 builder.Services.AddScoped<IShipService, ShipService>();
 builder.Services.AddScoped<ISchedulerService, SchedulerService>();
 builder.Services.AddScoped<ITimeManagementService, TimeManagementService>();
@@ -58,7 +59,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ==========================================
-// 2. SEED DATABASE
+// 2. DATABASE SEED
 // ==========================================
 await app.InitializeDatabaseAsync();
 
@@ -67,8 +68,8 @@ await app.InitializeDatabaseAsync();
 // ==========================================
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi(); // ✅ OpenAPI nativo
-    app.MapScalarApiReference(); // ✅ UI Scalar (sostituisce SwaggerUI)
+    app.MapOpenApi(); // ✅ Native OpenAPI
+    app.MapScalarApiReference(); // ✅ Scalar UI (replaces SwaggerUI)
 }
 
 app.UseCors("AllowFrontend");

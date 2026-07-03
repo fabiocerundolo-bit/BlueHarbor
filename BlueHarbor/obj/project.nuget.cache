@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "7l9pYthLOjo=",
+  "dgSpecHash": "4AuDKoiiLOo=",
   "success": true,
-  "projectFilePath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+  "projectFilePath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

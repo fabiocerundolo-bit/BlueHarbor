@@ -7,117 +7,121 @@ using Microsoft.EntityFrameworkCore;
 namespace BlueHarbor.Infrastructure.Repositories;
 
 /// <summary>
-/// Implementazione concreta del repository per la gestione delle Navi ed Occupazioni.
+/// Concrete implementation of the repository for managing Ships and Occupancies.
 /// </summary>
 public class ShipRepository(BlueHarborDbContext context) : IShipRepository
 {
-    public async Task<Nave?> GetByIdAsync(int id) =>
-        await context.Navi
-            .Include(n => n.Dimensione)
-            .FirstOrDefaultAsync(n => n.IdNave == id);
+    public async Task<Ship?> GetByIdAsync(int id) =>
+        await context.Ships
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
+            .Include(n => n.User)
+            .FirstOrDefaultAsync(n => n.ShipId == id);
 
-    public async Task<IEnumerable<Nave>> GetByStatusAsync(string status) => 
-        await context.Navi.Where(s => s.Stato == status).ToListAsync();
+    public async Task<IEnumerable<Ship>> GetByStatusAsync(string status) => 
+        await context.Ships.Where(s => s.Status == status).ToListAsync();
 
     /// <summary>
-    /// Recupera tutte le navi che hanno lo stato impostato a "Pending".
+    /// Retrieves all ships with status set to "Pending".
     /// </summary>
     public async Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync()
     {
-        return await context.Navi
-            .Include(n => n.Dimensione)
-            .Where(s => s.Stato == "Pending")
-            .Select(s => new PendingShipDto(s.IdNave, s.NomeNave, s.Dimensione.NomeDimensione, s.GiornoArrivo, s.DurataOccupazione))
+        return await context.Ships
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
+            .Where(s => s.Status == "Pending")
+            .Select(s => new PendingShipDto(s.ShipId, s.ListaNavi.NomeNave, s.ListaNavi.Dimensione.SizeName, s.ArrivalDay, s.DurationDays))
             .ToListAsync();
     }
 
     /// <summary>
-    /// Recupera tutte le navi registrate nel sistema, unendo le informazioni sulle banchine
-    /// associate ad esse tramite la tabella delle occupazioni per popolare il DTO finale.
+    /// Retrieves all ships registered in the system, joining berth information
+    /// via the occupancy table to populate the final DTO.
     /// </summary>
     public async Task<IEnumerable<ShipDto>> GetAllShipsAsync()
     {
-        return await context.Navi
-            .Include(n => n.Dimensione)
-            .Include(n => n.Utente)
-            .OrderByDescending(s => s.IdNave)
+        return await context.Ships
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
+            .Include(n => n.User)
+            .OrderByDescending(s => s.ShipId)
             .Select(s => new ShipDto(
-                s.IdNave, 
-                s.NomeNave, 
-                s.Note, 
-                s.Dimensione.NomeDimensione, 
-                s.GiornoArrivo, 
-                s.DurataOccupazione, 
-                s.Stato,
-                // Calcola il GiornoInizio dell'occupazione cercandolo nella tabella Occupazioni
-                context.Occupazioni
-                    .Where(o => o.IdNave == s.IdNave)
-                    .Select(o => (int?)o.GiornoInizio)
+                s.ShipId, 
+                s.ListaNavi.NomeNave, 
+                s.Notes, 
+                s.ListaNavi.Dimensione.SizeName, 
+                s.ArrivalDay, 
+                s.DurationDays, 
+                s.Status,
+                // Calculate the StartDay of the occupancy by looking it up in the Occupancy table
+                context.Occupancies
+                    .Where(o => o.ShipId == s.ShipId)
+                    .Select(o => (int?)o.StartDay)
                     .FirstOrDefault(),
-                // Trova l'ID della banchina assegnata
-                context.Occupazioni
-                    .Where(o => o.IdNave == s.IdNave)
-                    .Select(o => (int?)o.IdBanchina)
+                // Find the ID of the assigned berth
+                context.Occupancies
+                    .Where(o => o.ShipId == s.ShipId)
+                    .Select(o => (int?)o.BerthId)
                     .FirstOrDefault(),
-                // Trova il nome leggibile della banchina assegnata
-                context.Occupazioni
-                    .Where(o => o.IdNave == s.IdNave)
-                    .Select(o => o.Banchina.NomeBanchina)
+                // Find the human-readable name of the assigned berth
+                context.Occupancies
+                    .Where(o => o.ShipId == s.ShipId)
+                    .Select(o => o.Berth.BerthName)
                     .FirstOrDefault()
             ))
             .ToListAsync();
     }
 
-    public async Task AddAsync(Nave ship)
+    public async Task AddAsync(Ship ship)
     {
-        await context.Navi.AddAsync(ship);
+        await context.Ships.AddAsync(ship);
         await context.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Nave ship)
+    public async Task UpdateAsync(Ship ship)
     {
-        context.Navi.Update(ship);
+        context.Ships.Update(ship);
         await context.SaveChangesAsync();
     }
 
-    public async Task UpdateRangeAsync(IEnumerable<Nave> ships)
+    public async Task UpdateRangeAsync(IEnumerable<Ship> ships)
     {
-        context.Navi.UpdateRange(ships);
+        context.Ships.UpdateRange(ships);
         await context.SaveChangesAsync();
     }
 
-    public async Task AddAssignmentAsync(Occupazione assignment)
+    public async Task AddAssignmentAsync(Occupancy assignment)
     {
-        await context.Occupazioni.AddAsync(assignment);
+        await context.Occupancies.AddAsync(assignment);
         await context.SaveChangesAsync();
     }
 
-    public async Task AddAssignmentAndUpdateShipAsync(Occupazione assignment, Nave ship)
+    public async Task AddAssignmentAndUpdateShipAsync(Occupancy assignment, Ship ship)
     {
-        await context.Occupazioni.AddAsync(assignment);
-        context.Navi.Update(ship);
+        await context.Occupancies.AddAsync(assignment);
+        context.Ships.Update(ship);
         await context.SaveChangesAsync();
     }
 
     /// <summary>
-    /// Trova tutte le navi correntemente in stato "Assigned" che hanno esaurito la loro sosta in base
-    /// al giorno corrente virtuale e ne aggiorna lo stato in "Departed".
+    /// Finds all ships currently in "Assigned" status that have exhausted their stay based on
+    /// the current virtual day, and updates their status to "Departed".
     /// </summary>
-    /// <param name="currentDay">Giorno virtuale corrente di sistema.</param>
-    /// <returns>Il numero di righe modificate nel database.</returns>
+    /// <param name="currentDay">Current virtual system day.</param>
+    /// <returns>The number of rows modified in the database.</returns>
     public async Task<int> UpdateAssignedShipsToDepartedAsync(int currentDay)
     {
-        // Seleziona le navi in stato Assigned la cui data di inizio occupazione + durata è minore o uguale al giorno corrente
-        var shipsToDepart = await context.Navi
-            .Where(s => s.Stato == "Assigned")
-            .Join(context.Occupazioni, n => n.IdNave, o => o.IdNave, (n, o) => new { n, o })
-            .Where(x => (x.o.GiornoInizio + x.n.DurataOccupazione) <= currentDay)
+        // Select ships in Assigned status whose start day + duration is less than or equal to the current day
+        var shipsToDepart = await context.Ships
+            .Where(s => s.Status == "Assigned")
+            .Join(context.Occupancies, n => n.ShipId, o => o.ShipId, (n, o) => new { n, o })
+            .Where(x => (x.o.StartDay + x.n.DurationDays) <= currentDay)
             .Select(x => x.n)
             .ToListAsync();
 
         foreach (var ship in shipsToDepart)
         {
-            ship.Stato = "Departed";
+            ship.Status = "Departed";
         }
 
         return await context.SaveChangesAsync();
@@ -125,45 +129,62 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
 }
 
 /// <summary>
-/// Implementazione concreta del repository per la gestione delle Banchine fisiche.
+/// Concrete implementation of the repository for managing the ship lookup list.
+/// </summary>
+public class ListaNaviRepository(BlueHarborDbContext context) : IListaNaviRepository
+{
+    public async Task<ListaNavi?> GetByIdAsync(int id) =>
+        await context.ListaNavi
+            .Include(ln => ln.Dimensione)
+            .FirstOrDefaultAsync(ln => ln.IdListaNavi == id);
+
+    public async Task<IEnumerable<ListaNavi>> GetAllAsync() =>
+        await context.ListaNavi
+            .Include(ln => ln.Dimensione)
+            .ToListAsync();
+}
+
+/// <summary>
+/// Concrete implementation of the repository for managing physical Berths.
 /// </summary>
 public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
 {
-    public async Task<Banchina?> GetByIdAsync(int id) => 
-        await context.Banchine
-            .Include(b => b.Dimensione)
-            .Include(b => b.Occupazioni)
-            .ThenInclude(o => o.Nave)
-            .FirstOrDefaultAsync(b => b.IdBanchina == id);
+    public async Task<Berth?> GetByIdAsync(int id) => 
+        await context.Berths
+            .Include(b => b.Size)
+            .Include(b => b.Occupancies)
+            .ThenInclude(o => o.Ship)
+            .FirstOrDefaultAsync(b => b.BerthId == id);
 
-    public async Task<IEnumerable<Banchina>> GetAllWithAssignmentsAsync() => 
-        await context.Banchine
-            .Include(b => b.Dimensione)
-            .Include(b => b.Occupazioni)
+    public async Task<IEnumerable<Berth>> GetAllWithAssignmentsAsync() => 
+        await context.Berths
+            .Include(b => b.Size)
+            .Include(b => b.Occupancies)
             .ToListAsync();
 
     /// <summary>
-    /// Recupera tutte le banchine incluse le occupazioni programmate e i dettagli delle navi assegnate,
-    /// proiettando il tutto in un DTO ottimizzato per la visualizzazione della timeline.
+    /// Retrieves all berths including their scheduled occupancies and assigned ship details,
+    /// projecting everything into a DTO optimised for timeline display.
     /// </summary>
     public async Task<IEnumerable<BerthDto>> GetBerthsWithAssignmentsAsync()
     {
-        return await context.Banchine
-            .Include(b => b.Dimensione)
-            .Include(b => b.Occupazioni)
-            .ThenInclude(a => a.Nave)
+        return await context.Berths
+            .Include(b => b.Size)
+            .Include(b => b.Occupancies)
+            .ThenInclude(a => a.Ship)
+            .ThenInclude(s => s.ListaNavi)
             .Select(b => new BerthDto(
-                b.IdBanchina,
-                b.NomeBanchina,
-                b.Dimensione.NomeDimensione,
-                b.Occupazioni.Select(a => new BerthAssignmentDto(
-                    a.IdOccupazione,
-                    a.IdNave,
-                    a.Nave.NomeNave,
-                    a.GiornoInizio,
-                    // Fine occupazione calcolata come: inizio + durata - 1
-                    a.GiornoInizio + a.Nave.DurataOccupazione - 1,
-                    a.Nave.Stato
+                b.BerthId,
+                b.BerthName,
+                b.Size.SizeName,
+                b.Occupancies.Select(a => new BerthAssignmentDto(
+                    a.OccupancyId,
+                    a.ShipId,
+                    a.Ship.ListaNavi.NomeNave,
+                    a.StartDay,
+                    // End occupancy calculated as: start + duration - 1
+                    a.StartDay + a.Ship.DurationDays - 1,
+                    a.Ship.Status
                 ))
             ))
             .ToListAsync();
@@ -171,7 +192,7 @@ public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
 }
 
 /// <summary>
-/// Implementazione concreta del repository per la gestione dello stato e del giorno virtuale di sistema.
+/// Concrete implementation of the repository for managing the system state and virtual day.
 /// </summary>
 public class SystemStateRepository(BlueHarborDbContext context) : ISystemStateRepository
 {
@@ -185,7 +206,7 @@ public class SystemStateRepository(BlueHarborDbContext context) : ISystemStateRe
     }
 
     /// <summary>
-    /// Incrementa il contatore del giorno virtuale di sistema.
+    /// Increments the virtual system day counter.
     /// </summary>
     public async Task<int> AdvanceDayAsync()
     {

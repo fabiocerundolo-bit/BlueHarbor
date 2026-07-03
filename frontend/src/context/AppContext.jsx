@@ -1,42 +1,44 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import * as api from '../api/client'
 
-// Creazione del contesto globale per l'applicazione BlueHarbor
+// Global context creation for the BlueHarbor application
 const AppContext = createContext(null)
 
 /**
- * Provider globale che avvolge l'intera applicazione React.
- * Gestisce e sincronizza lo stato condiviso tra le pagine di "Operatore" e di "Scheduler".
+ * Global provider that wraps the entire React application.
+ * Manages and synchronizes shared state between the "Operator" and "Scheduler" pages.
  */
 export function AppProvider({ children }) {
-  // ── STATO GLOBALE ──────────────────────────────────────────────────────
+  // ── GLOBAL STATE ──────────────────────────────────────────────────────
 
-  // Ruolo attivo: viene letto da localStorage per sopravvivere ai refresh di pagina
+  // Active role: read from localStorage to survive page refreshes
   const [role, setRoleState] = useState(
-    () => localStorage.getItem('bh_role') ?? 'Operatore'
+    () => localStorage.getItem('bh_role') ?? 'Operator'
   )
-  const [currentDay, setCurrentDay] = useState(null)  // Giorno virtuale corrente del porto
-  const [ships, setShips] = useState([])             // Elenco di tutte le navi registrate (usato dall'operatore)
-  const [pendingShips, setPendingShips] = useState([]) // Navi in attesa di assegnazione (usato dallo scheduler)
-  const [berths, setBerths] = useState([])           // Banchine ed occupazioni pianificate (usato dallo scheduler)
+  const [currentDay, setCurrentDay] = useState(null)  // Harbor current virtual day
+  const [ships, setShips] = useState([])              // List of all registered ships (used by the operator)
+  const [shipList, setShipList] = useState([])        // Ship templates available for creation
+  const [pendingShips, setPendingShips] = useState([]) // Ships waiting for assignment (used by the scheduler)
+  const [berths, setBerths] = useState([])            // Berths and planned occupancies (used by the scheduler)
 
-  // Stati di caricamento per l'interfaccia utente (Loading States)
+  // Loading states for the user interface
   const [dayLoading, setDayLoading] = useState(false)
   const [shipsLoading, setShipsLoading] = useState(false)
+  const [shipListLoading, setShipListLoading] = useState(false)
   const [berthsLoading, setBerthsLoading] = useState(false)
 
-  const [error, setError] = useState(null)            // Ultimo messaggio d'errore catturato dall'API
+  const [error, setError] = useState(null)            // Last error message captured from the API
 
-  // useRef per memorizzare il ruolo ed evitare dipendenze superflue nelle callback di useCallback
+  // useRef to store the role and avoid unnecessary dependencies in useCallback callbacks
   const roleRef = useRef(role)
   roleRef.current = role
 
-  // Pulisce l'errore corrente visualizzato nel banner
+  // Clears the current error shown in the banner
   const clearError = useCallback(() => setError(null), [])
 
-  // ── GESTIONE GIORNO DI SISTEMA ──────────────────────────────────────────
+  // ── SYSTEM DAY MANAGEMENT ──────────────────────────────────────────────
 
-  // Recupera il giorno virtuale corrente dal backend
+  // Fetches the current virtual day from the backend
   const refreshDay = useCallback(async (r) => {
     try {
       const data = await api.fetchCurrentDay(r ?? roleRef.current)
@@ -46,10 +48,10 @@ export function AppProvider({ children }) {
     }
   }, [])
 
-  // ── GESTIONE NAVI (Ruolo: Operatore) ────────────────────────────────────
+  // ── SHIPS MANAGEMENT (Role: Operator) ────────────────────────────────
 
-  // Ricarica la lista completa di tutte le navi.
-  // Accetta un ruolo opzionale: se non specificato usa il ruolo corrente (roleRef).
+  // Reloads the full list of all ships.
+  // Accepts an optional role: if not specified it uses the current role (roleRef).
   const refreshShips = useCallback(async (role) => {
     setShipsLoading(true)
     clearError()
@@ -63,17 +65,31 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // Registra una nuova nave inviando i dati al backend e inserendola in cima alla lista locale
-  const doCreateShip = useCallback(async (name, notes) => {
+  // Reloads the list of ship templates used by the operator form.
+  const refreshShipList = useCallback(async (role) => {
+    setShipListLoading(true)
     clearError()
-    const ship = await api.createShip('Operatore', { name, notes })
+    try {
+      const data = await api.fetchShipList(role ?? roleRef.current)
+      setShipList(data)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setShipListLoading(false)
+    }
+  }, [clearError])
+
+  // Registers a new ship by sending data to the backend and prepending it to the local list
+  const doCreateShip = useCallback(async (idListaNavi, notes) => {
+    clearError()
+    const ship = await api.createShip('Operator', { idListaNavi, notes })
     setShips((prev) => [ship, ...prev])
     return ship
   }, [clearError])
 
-  // ── GESTIONE PIANIFICAZIONE (Ruolo: Scheduler) ──────────────────────────
+  // ── SCHEDULING MANAGEMENT (Role: Scheduler) ──────────────────────────
 
-  // Ricarica la lista delle sole navi in attesa di attracco
+  // Reloads the list of ships pending berth assignment
   const refreshPendingShips = useCallback(async () => {
     clearError()
     try {
@@ -84,7 +100,7 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // Ricarica la griglia delle banchine con le rispettive prenotazioni
+  // Reloads the berth grid with their respective assignments
   const refreshBerths = useCallback(async () => {
     setBerthsLoading(true)
     clearError()
@@ -98,19 +114,17 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // Esegue l'assegnazione di una nave a una banchina.
-  // Aggiorna le liste dello scheduler (pending + banchine) e sincronizza anche la lista
-  // ships dell'operatore direttamente in state, senza fare una chiamata API con role sbagliato.
-  // Esegue l'assegnazione e ricarica tutte e tre le liste dal DB:
-  // pending ships, banchine e registro navi (usando il ruolo Scheduler, ora autorizzato su GET /api/ships).
+  // Performs the assignment of a ship to a berth.
+  // Updates all three scheduler lists from the DB:
+  // pending ships, berths, and ship registry (using the Scheduler role, now authorized on GET /api/ships).
   const doAssignShip = useCallback(async (shipId, berthId) => {
     const result = await api.assignShip('Scheduler', shipId, berthId)
     await Promise.all([refreshPendingShips(), refreshBerths(), refreshShips('Scheduler')])
     return result
   }, [refreshPendingShips, refreshBerths, refreshShips])
 
-  // Avanza il giorno corrente di 1 unità ed aggiorna lo stato locale
-  // Definito dopo le funzioni di aggiornamento in quanto le utilizza come dipendenze
+  // Advances the current day by 1 unit and updates the local state.
+  // Defined after the update functions as it depends on them.
   const doAdvanceDay = useCallback(async () => {
     setDayLoading(true)
     clearError()
@@ -118,13 +132,13 @@ export function AppProvider({ children }) {
       const data = await api.advanceDay(roleRef.current)
       setCurrentDay(data.newCurrentDay)
 
-      // Attende 700ms per dare tempo al job Hangfire in background di completare
-      // l'aggiornamento degli stati delle navi (es. Assigned -> Departed)
-      // prima di ricaricare i dati dal backend
+      // Wait 700ms to give the Hangfire background job time to complete
+      // the ship status update (e.g. Assigned -> Departed)
+      // before reloading data from the backend
       await new Promise(resolve => setTimeout(resolve, 700))
 
-      // Aggiorna i dati relativi al ruolo corrente per mostrare lo stato aggiornato
-      if (roleRef.current === 'Operatore') {
+      // Update data for the current role to show the updated state
+      if (roleRef.current === 'Operator') {
         await refreshShips()
       } else if (roleRef.current === 'Scheduler') {
         await Promise.all([refreshPendingShips(), refreshBerths()])
@@ -136,27 +150,28 @@ export function AppProvider({ children }) {
     }
   }, [clearError, refreshShips, refreshPendingShips, refreshBerths])
 
-  // ── CAMBIO DI RUOLO (Sincronizzazione Dati) ─────────────────────────────
+  // ── ROLE SWITCH (Data Synchronization) ─────────────────────────────
 
-  // Gestisce lo switch di ruolo tra Operatore e Scheduler, forzando il caricamento dei dati corretti.
-  // Persiste il ruolo scelto in localStorage per sopravvivere ai refresh di pagina.
+  // Handles switching roles between Operator and Scheduler and forces the correct data to load.
+  // Persists the chosen role in localStorage to survive page refreshes.
   const setRole = useCallback((r) => {
     localStorage.setItem('bh_role', r)
     setRoleState(r)
     clearError()
     refreshDay(r)
-    if (r === 'Operatore') refreshShips()
+    if (r === 'Operator') refreshShips()
     if (r === 'Scheduler') {
       refreshPendingShips()
       refreshBerths()
     }
   }, [clearError, refreshDay, refreshShips, refreshPendingShips, refreshBerths])
 
-  // ── BOOTSTRAP INIZIALE ──────────────────────────────────────────────────
-  // Carica i dati appropriati in base al ruolo già salvato in localStorage
+  // ── INITIAL BOOTSTRAP ──────────────────────────────────────────────
+  // Loads appropriate data based on the role already saved in localStorage
   useEffect(() => {
     refreshDay()
-    if (roleRef.current === 'Operatore') {
+    refreshShipList('Operator')
+    if (roleRef.current === 'Operator') {
       refreshShips()
     } else {
       refreshPendingShips()
@@ -170,16 +185,19 @@ export function AppProvider({ children }) {
       setRole,
       currentDay,
       ships,
+      shipList,
       pendingShips,
       berths,
       dayLoading,
       shipsLoading,
+      shipListLoading,
       berthsLoading,
       error,
       clearError,
       refreshDay,
       advanceDay: doAdvanceDay,
       refreshShips,
+      refreshShipList,
       createShip: doCreateShip,
       refreshPendingShips,
       refreshBerths,
@@ -191,7 +209,7 @@ export function AppProvider({ children }) {
 }
 
 /**
- * Hook personalizzato per consumare il contesto dell'applicazione in modo sicuro.
+ * Custom hook to safely consume the application context.
  */
 export const useApp = () => {
   const ctx = useContext(AppContext)

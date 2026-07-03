@@ -7,57 +7,56 @@ services:
     container_name: blueharbor-db
     environment:
       SA_PASSWORD: "BlueHarbor_P@ss1" # Password dell'amministratore di sistema (SA)
-      ACCEPT_EULA: "Y"                # Accettazione obbligatoria dell'accordo di licenza SQL Server
-      MSSQL_PID: "Developer"          # Versione di licenza SQL Server (Developer è gratuita per sviluppo)
+      ACCEPT_EULA: "Y" # Accettazione obbligatoria dell'accordo di licenza SQL Server
+      MSSQL_PID: "Developer" # SQL Server license edition (Developer is free for development)
     ports:
-      - "1433:1433"                   # Esponde la porta standard di SQL Server sull'host
+      - "1433:1433" # Esponde la porta standard di SQL Server sull'host
     volumes:
-      - sqldata:/var/opt/mssql         # Volume persistente per conservare i file del database (.mdf, .ldf)
+      - sqldata:/var/opt/mssql # Volume persistente per conservare i file del database (.mdf, .ldf)
     healthcheck:
       # Verifica periodica che SQL Server sia pronto a ricevere connessioni tramite sqlcmd
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'BlueHarbor_P@ss1' -Q 'SELECT 1' -No"]
-      interval: 15s                   # Frequenza del controllo (ogni 15 secondi)
-      timeout: 10s                    # Tempo massimo di attesa per la risposta del controllo
-      retries: 10                     # Numero di fallimenti consecutivi prima di considerare il container "unhealthy"
-      start_period: 30s               # Tempo iniziale concesso per l'avvio prima di iniziare i controlli di integrità
+      test: [ "CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'BlueHarbor_P@ss1' -Q 'SELECT 1' -No" ]
+      interval: 15s # Frequenza del controllo (ogni 15 secondi)
+      timeout: 10s # Maximum wait time for the health check response
+      retries: 10 # Number of consecutive failures before considering the container unhealthy
+      start_period: 30s # Initial startup period before health checks begin
 
   # ── Backend ASP.NET Core (.NET 10) ────────────────────────────────────────
   # Container per l'API di backend che gestisce la logica di business e le operazioni di persistenza
   api:
     build:
-      context: .           # Definisce la root del repository come contesto di build (contiene BlueHarbor/ e BlueHarbor.sln)
+      context: . # Definisce la root del repository come contesto di build (contiene BlueHarbor/ e BlueHarbor.sln)
       dockerfile: BlueHarbor/Dockerfile
     image: blueharbor-api:latest
     container_name: blueharbor-api
     environment:
-      ASPNETCORE_ENVIRONMENT: Development # Imposta l'ambiente in modalità Sviluppo per abilitare OpenAPI e Scalar UI
-      ASPNETCORE_URLS: http://+:8080      # Porta interna su cui risponde l'applicazione Kestrel
+      ASPNETCORE_ENVIRONMENT: Development # Sets the environment to Development to enable OpenAPI and Scalar UI
+      ASPNETCORE_URLS: http://+:8080 # Porta interna su cui risponde l'applicazione Kestrel
       # Stringa di connessione SQL Server puntata al container db
       ConnectionStrings__DefaultConnection: >
-        Server=blueharbor-db,1433;Database=BlueHarborDb;
-        User Id=sa;Password=BlueHarbor_P@ss1;
-        TrustServerCertificate=True;MultipleActiveResultSets=true
+        Server=blueharbor-db,1433;Database=BlueHarborDb; User Id=sa;Password=BlueHarbor_P@ss1; TrustServerCertificate=True;MultipleActiveResultSets=true
     ports:
-      - "8080:8080"                  # Espone l'API sulla porta 8080 dell'host
+      - "8080:8080" # Espone l'API sulla porta 8080 dell'host
     depends_on:
       db:
-        condition: service_healthy   # Avvia l'API solo dopo che SQL Server ha superato con successo l'healthcheck
-    restart: on-failure              # Riavvia automaticamente il container solo in caso di arresto anomalo
+        condition: service_healthy # Starts the API only after SQL Server passes the health check
+      restart: on-failure # Automatically restarts the container only in case of abnormal termination
 
   # ── Frontend React + Nginx ────────────────────────────────────────────────
   # Container per il frontend web basato su React, servito da un server web Nginx
   frontend:
     build:
-      context: ./frontend   # Contesto di build specifico per la directory frontend (package.json, src/, nginx.conf)
+      context: ./frontend # Contesto di build specifico per la directory frontend (package.json, src/, nginx.conf)
       dockerfile: Dockerfile
     image: blueharbor-frontend:latest
     container_name: blueharbor-frontend
     ports:
-      - "3000:80"           # Mappa la porta 80 interna del server Nginx sulla porta 3000 dell'host per l'accesso utente
+      - "3001:80" # Mappa la porta 80 interna del server Nginx sulla porta 3000 dell'host per l'accesso utente
     depends_on:
-      - api                 # Garantisce che il container dell'API venga avviato prima del frontend
-    restart: unless-stopped  # Riavvia sempre il container a meno che non sia stato arrestato esplicitamente dall'utente
+      - api # Garantisce che il container dell'API venga avviato prima del frontend
+    restart: unless-stopped # Riavvia sempre il container a meno che non sia stato arrestato esplicitamente dall'utente
 
 volumes:
-  sqldata:                   # Definizione del volume condiviso per la memorizzazione dei dati SQL Server
+  sqldata:
+    # Definizione del volume condiviso per la memorizzazione dei dati SQL Server
 

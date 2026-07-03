@@ -1,4 +1,4 @@
-﻿namespace BlueHarbor.Infrastructure.Persistence;
+namespace BlueHarbor.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,25 +11,17 @@ public static class DbInitializerExtensions
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BlueHarborDbContext>();
 
-        // In un ambiente di sviluppo, se il DB esiste ma non ha tabelle (o ha uno schema vecchio), 
-        // EnsureCreatedAsync non farà nulla. Per risolvere l'errore 208, forziamo la ricreazione in caso di errore.
         try 
         {
-            await dbContext.Database.EnsureCreatedAsync();
-            
-            // Verifica immediata
-            if (!await dbContext.Banchine.AnyAsync())
-            {
-                Console.WriteLine("Seed manuale non rilevato, EnsureCreatedAsync potrebbe non aver creato le tabelle.");
-            }
+            await dbContext.Database.MigrateAsync();
         }
         catch (Exception)
         {
-            Console.WriteLine("Database inconsistente rilevato. Tentativo di rigenerazione...");
+            Console.WriteLine("Database migration failed. Attempting a clean regeneration...");
             await dbContext.Database.EnsureDeletedAsync();
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
         }
 
-        Console.WriteLine("Database inizializzato con successo.");
+        Console.WriteLine("Database initialized successfully.");
     }
 }

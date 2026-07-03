@@ -7,85 +7,85 @@ using BlueHarbor.Infrastructure.Repositories;
 namespace BlueHarbor.Application.Services;
 
 /// <summary>
-/// Servizio responsabile della gestione e pianificazione delle navi sulle banchine del porto.
-/// Contiene la logica di business per verificare la compatibilità delle dimensioni e allocare slot temporali non sovrapposti.
+/// Service responsible for managing and scheduling ships across harbor berths.
+/// Contains the business logic for verifying size compatibility and allocating non-overlapping time slots.
 /// </summary>
 public class SchedulerService(IShipRepository shipRepository, IBerthRepository berthRepository) : ISchedulerService
 {
     /// <summary>
-    /// Recupera tutte le navi in attesa di essere pianificate (in stato "Pending").
+    /// Retrieves all ships waiting to be scheduled (in "Pending" status).
     /// </summary>
-    /// <returns>Una lista di DTO contenente le informazioni delle navi in attesa.</returns>
+    /// <returns>A list of DTOs containing information about pending ships.</returns>
     public async Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync()
     {
         return await shipRepository.GetPendingShipsAsync();
     }
 
     /// <summary>
-    /// Recupera tutte le banchine disponibili assieme ai loro dettagli di occupazione programmati.
+    /// Retrieves all available berths along with their scheduled occupancy details.
     /// </summary>
-    /// <returns>Una lista di DTO rappresentanti le banchine e le rispettive assegnazioni.</returns>
+    /// <returns>A list of DTOs representing berths and their respective assignments.</returns>
     public async Task<IEnumerable<BerthDto>> GetBerthsAsync()
     {
         return await berthRepository.GetBerthsWithAssignmentsAsync();
     }
 
     /// <summary>
-    /// Assegna una nave specifica a una banchina specifica.
-    /// Calcola il primo giorno disponibile per l'attracco senza conflitti e aggiorna lo stato della nave in "Assigned".
+    /// Assigns a specific ship to a specific berth.
+    /// Calculates the first available time slot for docking without conflicts and updates the ship status to "Assigned".
     /// </summary>
-    /// <param name="shipId">ID univoco della nave da assegnare.</param>
-    /// <param name="berthId">ID univoco della banchina di destinazione.</param>
-    /// <returns>Un DTO di risposta contenente i dettagli dell'assegnazione temporale calcolata.</returns>
-    /// <exception cref="KeyNotFoundException">Lanciata se la nave o la banchina non esistono nel database.</exception>
-    /// <exception cref="InvalidOperationException">Lanciata se la nave non è in attesa o se la taglia non è compatibile.</exception>
+    /// <param name="shipId">Unique ID of the ship to assign.</param>
+    /// <param name="berthId">Unique ID of the target berth.</param>
+    /// <returns>A response DTO containing the details of the calculated time assignment.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the ship or berth does not exist in the database.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the ship is not in Pending status or the size is incompatible.</exception>
     public async Task<AssignmentResponseDto> AssignShipToBerthAsync(int shipId, int berthId)
     {
-        // 1. Recupera la nave e verifica che sia in stato Pending
+        // 1. Retrieve the ship and verify it is in Pending status
         var ship = await shipRepository.GetByIdAsync(shipId);
-        if (ship == null) throw new KeyNotFoundException("Nave non trovata.");
-        if (ship.Stato != "Pending") 
-            throw new InvalidOperationException("La nave non è in stato Pending.");
+        if (ship == null) throw new KeyNotFoundException("Ship not found.");
+        if (ship.Status != "Pending") 
+            throw new InvalidOperationException("The ship is not in Pending status.");
 
-        // 2. Recupera la banchina con le sue assegnazioni esistenti
+        // 2. Retrieve the berth with its existing assignments
         var berth = await berthRepository.GetByIdAsync(berthId);
-        if (berth == null) throw new KeyNotFoundException("Banchina non trovata.");
+        if (berth == null) throw new KeyNotFoundException("Berth not found.");
 
-        // 3. Regola di dominio: la banchina deve essere compatibile per dimensione
-        if (berth.IdDimensione != ship.IdDimensione)
+        // 3. Domain rule: the berth must be compatible by size
+        if (berth.SizeId != ship.ListaNavi.FK_Id_Dimensione)
         {
-            throw new InvalidOperationException($"Dimensione non compatibile. Nave: {ship.IdDimensione}, Banchina: {berth.IdDimensione}");
+            throw new InvalidOperationException($"Incompatible size. Ship: {ship.ListaNavi.FK_Id_Dimensione}, Berth: {berth.SizeId}");
         }
 
-        // 4. Algoritmo: Trova il primo slot temporale disponibile a partire dal giorno di arrivo della nave
-        int startDay = FindFirstAvailableSlot(berth, ship.GiornoArrivo, ship.DurataOccupazione);
-        int endDay = startDay + ship.DurataOccupazione - 1;
+        // 4. Algorithm: Find the first available time slot starting from the ship's arrival day
+        int startDay = FindFirstAvailableSlot(berth, ship.ArrivalDay, ship.DurationDays);
+        int endDay = startDay + ship.DurationDays - 1;
 
-        // 5. Aggiorna lo stato della nave a "Assigned"
-        ship.Stato = "Assigned";
+        // 5. Update the ship's status to "Assigned"
+        ship.Status = "Assigned";
 
-        // 6. Crea il record di occupazione e salva entrambe le modifiche in una sola transazione
-        var occupazione = new Occupazione
+        // 6. Create the occupancy record and save both changes in a single transaction
+        var occupancy = new Occupancy
         {
-            IdNave = ship.IdNave,
-            IdBanchina = berth.IdBanchina,
-            GiornoInizio = startDay,
-            IdUtente = 1 // Default Admin
+            ShipId = ship.ShipId,
+            BerthId = berth.BerthId,
+            StartDay = startDay,
+            UserId = 1 // Default Admin
         };
 
-        await shipRepository.AddAssignmentAndUpdateShipAsync(occupazione, ship);
+        await shipRepository.AddAssignmentAndUpdateShipAsync(occupancy, ship);
 
-        return new AssignmentResponseDto(ship.IdNave, berth.IdBanchina, startDay, endDay, ship.Stato);
+        return new AssignmentResponseDto(ship.ShipId, berth.BerthId, startDay, endDay, ship.Status);
     }
 
     /// <summary>
-    /// Trova il primo slot temporale disponibile in cui la nave può stazionare senza sovrapporsi ad altre navi.
+    /// Finds the first available time slot in which the ship can stay without overlapping with other ships.
     /// </summary>
-    /// <param name="berth">L'entità banchina con le sue occupazioni correnti caricate.</param>
-    /// <param name="earliestStart">Il giorno minimo a partire dal quale calcolare lo slot (giorno di arrivo della nave).</param>
-    /// <param name="duration">La durata del soggiorno in giorni.</param>
-    /// <returns>Il giorno di inizio calcolato per lo slot libero.</returns>
-    private int FindFirstAvailableSlot(Banchina berth, int earliestStart, int duration)
+    /// <param name="berth">The berth entity with its current occupancies loaded.</param>
+    /// <param name="earliestStart">The minimum day from which to calculate the slot (ship's arrival day).</param>
+    /// <param name="duration">The duration of the stay in days.</param>
+    /// <returns>The calculated start day for the free slot.</returns>
+    private int FindFirstAvailableSlot(Berth berth, int earliestStart, int duration)
     {
         int candidateStart = earliestStart;
         bool hasConflict;
@@ -95,18 +95,18 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
             hasConflict = false;
             int candidateEnd = candidateStart + duration - 1;
 
-            foreach (var existing in berth.Occupazioni)
+            foreach (var existing in berth.Occupancies)
             {
-                // Calcoliamo la fine dell'occupazione esistente: (Inizio + Durata - 1)
-                int existingEnd = existing.GiornoInizio + (existing.Nave?.DurataOccupazione ?? 0) - 1;
+                // Calculate the end of the existing occupancy: (StartDay + DurationDays - 1)
+                int existingEnd = existing.StartDay + (existing.Ship?.DurationDays ?? 0) - 1;
 
-                // Controllo intersezione di intervalli temporali: [candidateStart, candidateEnd] si sovrappone a [existing.GiornoInizio, existingEnd] ?
-                if (candidateStart <= existingEnd && candidateEnd >= existing.GiornoInizio)
+                // Check time interval intersection: does [candidateStart, candidateEnd] overlap [existing.StartDay, existingEnd]?
+                if (candidateStart <= existingEnd && candidateEnd >= existing.StartDay)
                 {
                     hasConflict = true;
-                    // Se c'è conflitto, sposta il candidato al giorno successivo al termine dell'occupazione esistente
+                    // If there is a conflict, move the candidate to the day after the existing occupancy ends
                     candidateStart = existingEnd + 1;
-                    break; // Esci dal ciclo per ripartire con il nuovo giorno candidato
+                    break; // Exit the loop to restart with the new candidate day
                 }
             }
         } while (hasConflict);

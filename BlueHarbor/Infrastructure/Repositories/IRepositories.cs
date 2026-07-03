@@ -5,100 +5,116 @@ using BlueHarbor.Domain.Enums;
 namespace BlueHarbor.Infrastructure.Repositories;
 
 /// <summary>
-/// Interfaccia del repository per l'entità Nave.
-/// Gestisce la persistenza e le query relative alle navi e ai loro attracchi.
+/// Repository interface for the Ship entity.
+/// Manages persistence and queries related to ships and their berth assignments.
 /// </summary>
 public interface IShipRepository
 {
     /// <summary>
-    /// Recupera una nave tramite il suo ID univoco.
+    /// Retrieves a ship by its unique ID.
     /// </summary>
-    Task<Nave?> GetByIdAsync(int id);
+    Task<Ship?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Recupera tutte le navi che si trovano in uno specifico stato.
+    /// Retrieves all ships that are in a specific status.
     /// </summary>
-    Task<IEnumerable<Nave>> GetByStatusAsync(string status);
+    Task<IEnumerable<Ship>> GetByStatusAsync(string status);
 
     /// <summary>
-    /// Recupera le navi pendenti proiettandole in un DTO leggero per lo scheduler.
+    /// Retrieves pending ships projected into a lightweight DTO for the scheduler.
     /// </summary>
     Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync();
 
     /// <summary>
-    /// Recupera la lista di tutte le navi registrate proiettate in ShipDto con dettagli di occupazione.
+    /// Retrieves the list of all registered ships projected into ShipDto with occupancy details.
     /// </summary>
     Task<IEnumerable<ShipDto>> GetAllShipsAsync();
 
     /// <summary>
-    /// Aggiunge una nuova nave al database.
+    /// Adds a new ship to the database.
     /// </summary>
-    Task AddAsync(Nave ship);
+    Task AddAsync(Ship ship);
 
     /// <summary>
-    /// Aggiorna i dati di una nave esistente.
+    /// Updates an existing ship's data.
     /// </summary>
-    Task UpdateAsync(Nave ship);
+    Task UpdateAsync(Ship ship);
 
     /// <summary>
-    /// Aggiorna un intervallo di navi.
+    /// Updates a range of ships.
     /// </summary>
-    Task UpdateRangeAsync(IEnumerable<Nave> ships);
+    Task UpdateRangeAsync(IEnumerable<Ship> ships);
 
     /// <summary>
-    /// Registra l'assegnazione temporale (occupazione) di una nave ad una banchina.
+    /// Registers the temporal assignment (occupancy) of a ship to a berth.
     /// </summary>
-    Task AddAssignmentAsync(Occupazione assignment);
+    Task AddAssignmentAsync(Occupancy assignment);
 
     /// <summary>
-    /// Salva occupation e aggiornamento dello stato nave in un'unica transazione atomica.
+    /// Saves occupancy and ship status update in a single atomic transaction.
     /// </summary>
-    Task AddAssignmentAndUpdateShipAsync(Occupazione assignment, Nave ship);
+    Task AddAssignmentAndUpdateShipAsync(Occupancy assignment, Ship ship);
 
     /// <summary>
-    /// Trova le navi assegnate la cui sosta è terminata al giorno specificato e ne aggiorna lo stato in "Departed".
+    /// Finds assigned ships whose stay has ended on the specified day and updates their status to "Departed".
     /// </summary>
     Task<int> UpdateAssignedShipsToDepartedAsync(int currentDay);
 }
 
 /// <summary>
-/// Interfaccia del repository per l'entità Banchina.
+/// Repository interface for the ship lookup list entity.
+/// </summary>
+public interface IListaNaviRepository
+{
+    /// <summary>
+    /// Retrieves a ship lookup item by ID, including its size relation.
+    /// </summary>
+    Task<ListaNavi?> GetByIdAsync(int id);
+
+    /// <summary>
+    /// Retrieves all ship lookup items including their size relation.
+    /// </summary>
+    Task<IEnumerable<ListaNavi>> GetAllAsync();
+}
+
+/// <summary>
+/// Repository interface for the Berth entity.
 /// </summary>
 public interface IBerthRepository
 {
     /// <summary>
-    /// Recupera una banchina tramite ID comprensiva delle sue occupazioni e dettagli navi.
+    /// Retrieves a berth by ID including its occupancies and ship details.
     /// </summary>
-    Task<Banchina?> GetByIdAsync(int id);
+    Task<Berth?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Recupera tutte le banchine incluse le relazioni per taglia e occupazioni.
+    /// Retrieves all berths including size and occupancy relationships.
     /// </summary>
-    Task<IEnumerable<Banchina>> GetAllWithAssignmentsAsync();
+    Task<IEnumerable<Berth>> GetAllWithAssignmentsAsync();
 
     /// <summary>
-    /// Recupera tutte le banchine formattate come BerthDto per l'interfaccia utente.
+    /// Retrieves all berths formatted as BerthDto for the user interface.
     /// </summary>
     Task<IEnumerable<BerthDto>> GetBerthsWithAssignmentsAsync();
 }
 
 /// <summary>
-/// Interfaccia del repository per gestire lo stato globale e il tempo virtuale del porto.
+/// Repository interface for managing the global system state and virtual harbor time.
 /// </summary>
 public interface ISystemStateRepository
 {
     /// <summary>
-    /// Recupera l'unico record dello stato di sistema.
+    /// Retrieves the single system state record.
     /// </summary>
     Task<SystemState> GetAsync();
 
     /// <summary>
-    /// Aggiorna il record dello stato di sistema.
+    /// Updates the system state record.
     /// </summary>
     Task UpdateAsync(SystemState state);
 
     /// <summary>
-    /// Incrementa il giorno virtuale di sistema di 1.
+    /// Increments the virtual system day counter by 1.
     /// </summary>
     Task<int> AdvanceDayAsync();
 }

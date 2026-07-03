@@ -3,6 +3,17 @@ import { test, expect } from '@playwright/test'
 // Unique suffix per run to avoid conflicts with existing data
 const RUN_ID = Date.now()
 
+const SHIP_TEMPLATES = {
+  xl1: { id: '1', name: 'MSC Splendida' },
+  xl2: { id: '2', name: 'Costa Favolosa' },
+  l1: { id: '3', name: 'Norwegian Epic' },
+  l2: { id: '4', name: 'Celebrity Reflection' },
+  m1: { id: '5', name: 'Queen Mary 2' },
+  m2: { id: '6', name: 'Disney Dream' },
+  s1: { id: '7', name: 'Seabourn Odyssey' },
+  s2: { id: '8', name: 'Wind Star' },
+}
+
 test.describe('Ship Assignment Flow', () => {
 
   test.beforeEach(async ({ page }) => {
@@ -10,187 +21,187 @@ test.describe('Ship Assignment Flow', () => {
     await page.waitForSelector('text=BlueHarbor')
   })
 
-  // ─── Helper: crea una nave come Operatore ──────────────────────────────
-  async function createShip(page, name) {
-    await page.click('button:has-text("Operatore")')
-    await page.waitForSelector('[placeholder="es. MS Adriatic Star"]')
-    await page.fill('[placeholder="es. MS Adriatic Star"]', name)
-    await page.click('button:has-text("Registra Nave")')
-    await page.waitForSelector('text=Nave registrata con successo', { timeout: 10000 })
+  // ─── Helper: create a ship as Operator ────────────────────────────────
+  async function createShip(page, template, notes = '') {
+    await page.click('button:has-text("Operator")')
+    await page.waitForSelector('label:has-text("Ship Template")')
+    await page.selectOption('select', template.id)
+    if (notes) {
+      await page.fill('textarea', notes)
+    }
+    await page.click('button:has-text("Register Ship")')
+    await page.waitForSelector('text=Ship registered successfully', { timeout: 10000 })
   }
 
-  // ─── Helper: assegna una nave come Scheduler ───────────────────────────
+  // ─── Helper: assign a ship as Scheduler ───────────────────────────────
   async function assignShip(page, shipName) {
-    // Clicca sulla riga della nave e selezionala
-    const shipRow = page.locator('tr', { hasText: shipName })
-    await shipRow.locator('text=Seleziona →').click()
+    // Click the ship row and select it
+    const shipRow = page.locator('tbody tr', { hasText: shipName }).first()
+    await shipRow.getByText('Select →', { exact: true }).click()
 
-    // Attende che almeno una banchina compatibile sia cliccabile
+    // Wait until at least one compatible berth becomes clickable
     const compatibleBerth = page.locator('[data-testid="berth-clickable"]').first()
     await expect(compatibleBerth).toBeVisible({ timeout: 5000 })
     await compatibleBerth.click()
 
-    // Verifica che il modal mostri "Conferma Assegnazione" (non spinner)
-    const confirmBtn = page.locator('button:has-text("Conferma Assegnazione")')
+    // Verify that the modal shows "Confirm Assignment" (not the spinner state)
+    const confirmBtn = page.locator('button:has-text("Confirm Assignment")')
     await expect(confirmBtn).toBeVisible({ timeout: 3000 })
     await expect(confirmBtn).toBeEnabled()
 
-    // Conferma
+    // Confirm
     await confirmBtn.click()
 
-    // Attende il toast di successo
-    await expect(page.locator('text=Nave assegnata con successo')).toBeVisible({ timeout: 10000 })
+    // Wait for the success toast
+    await expect(page.locator('text=Ship assigned successfully')).toBeVisible({ timeout: 10000 })
   }
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 1: Creazione nave
+  // TEST 1: Ship creation
   // ════════════════════════════════════════════════════════════════════════
-  test('crea una nave e la mostra in lista', async ({ page }) => {
-    const name = `TestNave-${RUN_ID}`
+  test('creates a ship and shows it in the list', async ({ page }) => {
+    const template = SHIP_TEMPLATES.xl1
 
-    await page.click('button:has-text("Operatore")')
-    await page.waitForSelector('[placeholder="es. MS Adriatic Star"]')
-    await page.fill('[placeholder="es. MS Adriatic Star"]', name)
+    await page.click('button:has-text("Operator")')
+    await page.waitForSelector('label:has-text("Ship Template")')
+    await page.selectOption('select', template.id)
 
-    // Il bottone deve essere abilitato con testo valido
-    await expect(page.locator('button:has-text("Registra Nave")')).toBeEnabled()
+    // The button should be enabled once a valid template is selected
+    await expect(page.locator('button:has-text("Register Ship")')).toBeEnabled()
 
-    await page.click('button:has-text("Registra Nave")')
+    await page.click('button:has-text("Register Ship")')
 
-    // Comparsa del banner di successo con i dettagli
-    await expect(page.locator('text=Nave registrata con successo')).toBeVisible({ timeout: 8000 })
-    await expect(page.locator(`text=${name}`)).toBeVisible()
+    // Success banner appears with the details
+    await expect(page.locator('text=Ship registered successfully')).toBeVisible({ timeout: 8000 })
+    await expect(page.locator('tbody tr').filter({ hasText: template.name }).first()).toBeVisible()
 
-    // Il campo si è svuotato
-    await expect(page.locator('[placeholder="es. MS Adriatic Star"]')).toHaveValue('')
+    // The select resets after creation
+    await expect(page.locator('select')).toHaveValue('')
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 2: Bottone "Registra Nave" disabilitato con campo vuoto
+  // TEST 2: "Register Ship" button disabled with no selection
   // ════════════════════════════════════════════════════════════════════════
-  test('bottone registra nave disabilitato se nome vuoto', async ({ page }) => {
-    await page.click('button:has-text("Operatore")')
-    await page.waitForSelector('[placeholder="es. MS Adriatic Star"]')
+  test('register ship button is disabled without a template', async ({ page }) => {
+    await page.click('button:has-text("Operator")')
+    await page.waitForSelector('label:has-text("Ship Template")')
 
-    const btn = page.locator('button:has-text("Registra Nave")')
+    const btn = page.locator('button:has-text("Register Ship")')
     await expect(btn).toBeDisabled()
 
-    await page.fill('[placeholder="es. MS Adriatic Star"]', '   ')
+    await page.selectOption('select', '')
     await expect(btn).toBeDisabled()
-
-    await page.fill('[placeholder="es. MS Adriatic Star"]', 'A')
-    await expect(btn).toBeEnabled()
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 3: Switch ruolo Operatore ↔ Scheduler
+  // TEST 3: Operator ↔ Scheduler role switch
   // ════════════════════════════════════════════════════════════════════════
-  test('switch di ruolo mostra la view corretta', async ({ page }) => {
-    // Default: Operatore
-    await expect(page.locator('text=Registra Nuova Nave')).toBeVisible()
-    await expect(page.locator('text=Navi in Attesa')).not.toBeVisible()
+  test('role switch shows the correct view', async ({ page }) => {
+    // Default: Operator
+    await expect(page.locator('text=Register New Ship')).toBeVisible()
+    await expect(page.locator('text=Pending Ships')).not.toBeVisible()
 
-    // Switch a Scheduler
+    // Switch to Scheduler
     await page.click('button:has-text("Scheduler")')
-    await expect(page.locator('text=Navi in Attesa')).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('text=Tabellone Banchine')).toBeVisible()
-    await expect(page.locator('text=Registra Nuova Nave')).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Pending Ships' })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: 'Berth Schedule' })).toBeVisible()
+    await expect(page.locator('text=Register New Ship')).not.toBeVisible()
 
     // Switch back
-    await page.click('button:has-text("Operatore")')
-    await expect(page.locator('text=Registra Nuova Nave')).toBeVisible({ timeout: 3000 })
+    await page.click('button:has-text("Operator")')
+    await expect(page.getByRole('heading', { name: 'Register New Ship' })).toBeVisible({ timeout: 3000 })
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 4: Assegna prima nave — flusso base
+  // TEST 4: Assign the first ship - base flow
   // ════════════════════════════════════════════════════════════════════════
-  test('assegna una nave a una banchina', async ({ page }) => {
-    const name = `AlphaTest-${RUN_ID}`
-    await createShip(page, name)
+  test('assigns a ship to a berth', async ({ page }) => {
+    const template = SHIP_TEMPLATES.xl1
+    await createShip(page, template)
 
     await page.click('button:has-text("Scheduler")')
-    await page.waitForSelector('text=Navi in Attesa', { timeout: 8000 })
-    await page.waitForSelector(`text=${name}`, { timeout: 5000 })
+    await page.waitForSelector('text=Pending Ships', { timeout: 8000 })
+    await page.waitForSelector(`text=${template.name}`, { timeout: 5000 })
 
-    await assignShip(page, name)
+    await assignShip(page, template.name)
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 5: REGRESSION BUG — La seconda nave non deve bloccarsi
-  // Riproduce il bug segnalato: assegnare 2 navi in sequenza causava
-  // che la seconda aprisse il modal già con lo spinner attivo (loading=true
-  // mai resettato dal success path della prima assegnazione).
+  // TEST 5: REGRESSION BUG - The second ship must not get stuck
+  // Reproduces the reported bug: assigning 2 ships in sequence caused
+  // the second one to open the modal already in the spinner state (loading=true
+  // never reset by the success path of the first assignment).
   // ════════════════════════════════════════════════════════════════════════
-  test('assegna due navi in sequenza senza blocco infinito', async ({ page }) => {
-    const name1 = `Ship1-${RUN_ID}`
-    const name2 = `Ship2-${RUN_ID}`
+  test('assigns two ships in sequence without an infinite block', async ({ page }) => {
+    const template1 = SHIP_TEMPLATES.xl1
+    const template2 = SHIP_TEMPLATES.xl2
 
-    // Crea entrambe le navi come Operatore
-    await createShip(page, name1)
-    await createShip(page, name2)
+    // Create both ships as Operator
+    await createShip(page, template1)
+    await createShip(page, template2)
 
-    // Passa allo Scheduler
+    // Switch to Scheduler
     await page.click('button:has-text("Scheduler")')
-    await page.waitForSelector('text=Navi in Attesa', { timeout: 8000 })
-    await page.waitForSelector(`text=${name1}`, { timeout: 5000 })
+    await page.waitForSelector('text=Pending Ships', { timeout: 8000 })
+    await page.waitForSelector(`text=${template1.name}`, { timeout: 5000 })
 
-    // ── Prima assegnazione ──
-    await assignShip(page, name1)
+    // First assignment
+    await assignShip(page, template1.name)
 
-    // Attende che il toast sparisca (chiuso manualmente o timeout)
+    // Wait for the toast to disappear (closed manually or by timeout)
     await page.waitForTimeout(500)
 
-    // ── Seconda assegnazione ──
-    // La seconda nave deve essere ancora in lista
-    await page.waitForSelector(`text=${name2}`, { timeout: 5000 })
+    // Second assignment
+    // The second ship must still be in the list
+    await page.waitForSelector(`text=${template2.name}`, { timeout: 5000 })
 
-    // Seleziona nave2
-    const row2 = page.locator('tr', { hasText: name2 })
-    await row2.locator('text=Seleziona →').click()
+    // Select ship 2
+    const row2 = page.locator('tbody tr', { hasText: template2.name }).first()
+    await row2.getByText('Select →', { exact: true }).click()
 
-    // Clicca prima banchina compatibile
+    // Click the first compatible berth
     const compatibleBerth = page.locator('[data-testid="berth-clickable"]').first()
     await expect(compatibleBerth).toBeVisible({ timeout: 5000 })
     await compatibleBerth.click()
 
-    // ── VERIFICA REGRESSIONE BUG ──
-    // Il modal deve mostrare "Conferma Assegnazione" (NON "Assegnazione..." con spinner)
-    // Prima del fix, questo falliva perché loading=true persisteva dal modal precedente
-    const confirmBtn = page.locator('button:has-text("Conferma Assegnazione")')
+    // Regression check
+    // The modal must show "Confirm Assignment" (NOT the spinner state)
+    // Before the fix, this failed because loading=true persisted from the previous modal
+    const confirmBtn = page.locator('button:has-text("Confirm Assignment")')
     await expect(confirmBtn).toBeVisible({ timeout: 3000 })
     await expect(confirmBtn).toBeEnabled()
-    await expect(page.locator('text=Assegnazione...')).not.toBeVisible()
+    await expect(page.locator('text=Assigning...')).not.toBeVisible()
 
-    // Completa la seconda assegnazione
+    // Complete the second assignment
     await confirmBtn.click()
-    await expect(page.locator('text=Nave assegnata con successo')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=Ship assigned successfully')).toBeVisible({ timeout: 10000 })
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 6: Il tabellone mostra la nave assegnata nella timeline
+  // TEST 6: The schedule grid shows the assigned ship in the timeline
   // ════════════════════════════════════════════════════════════════════════
-  test('il tabellone banchine riflette la nave assegnata', async ({ page }) => {
-    const name = `GridTest-${RUN_ID}`
-    await createShip(page, name)
+  test('the berth grid reflects the assigned ship', async ({ page }) => {
+    const template = SHIP_TEMPLATES.xl1
+    await createShip(page, template)
 
     await page.click('button:has-text("Scheduler")')
-    await page.waitForSelector(`text=${name}`, { timeout: 6000 })
-    await assignShip(page, name)
+    await page.waitForSelector(`text=${template.name}`, { timeout: 6000 })
+    await assignShip(page, template.name)
 
-    // Il nome della nave deve comparire nella griglia banchine
-    await expect(page.locator('.card').filter({ hasText: 'Tabellone Banchine' }).locator(`text=${name}`))
+    // The ship name must appear in the berth grid
+    await expect(page.locator('.card').filter({ hasText: 'Berth Schedule' }).locator(`text=${template.name}`).first())
       .toBeVisible({ timeout: 5000 })
   })
 
   // ════════════════════════════════════════════════════════════════════════
-  // TEST 7: Nessuna banchina compatibile è selezionabile se nessuna nave è
-  // selezionata (le banchine non devono avere data-testid="berth-clickable")
+  // TEST 7: No compatible berth is selectable when no ship is selected
+  // (berths must not have data-testid="berth-clickable")
   // ════════════════════════════════════════════════════════════════════════
-  test('le banchine non sono cliccabili senza una nave selezionata', async ({ page }) => {
+  test('berths are not clickable without a selected ship', async ({ page }) => {
     await page.click('button:has-text("Scheduler")')
-    await page.waitForSelector('text=Tabellone Banchine', { timeout: 6000 })
+    await page.waitForSelector('text=Berth Schedule', { timeout: 6000 })
 
-    // Nessuna banchina deve avere data-testid berth-clickable se non è selezionata una nave
+    // No berth should have data-testid berth-clickable if no ship is selected
     await expect(page.locator('[data-testid="berth-clickable"]')).toHaveCount(0)
   })
 

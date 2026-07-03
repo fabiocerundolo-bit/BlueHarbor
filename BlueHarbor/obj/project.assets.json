@@ -3468,11 +3468,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+      "projectUniqueName": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
       "projectName": "BlueHarbor",
-      "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+      "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
       "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-masterv01\\BlueHarbor\\BlueHarbor\\obj\\",
+      "outputPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"

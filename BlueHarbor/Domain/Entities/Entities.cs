@@ -3,91 +3,112 @@ namespace BlueHarbor.Domain.Entities;
 using BlueHarbor.Domain.Enums;
 
 /// <summary>
-/// Rappresenta il ruolo di sicurezza associato ad un utente (es. Operatore, Scheduler).
+/// Represents the security role associated with a user (e.g. Operator, Scheduler).
 /// </summary>
-public class Ruolo
+public class Role
 {
-    public int IdRuolo { get; set; }
-    public string NomeRuolo { get; set; } = string.Empty;
+    public int RoleId { get; set; }
+    public string RoleName { get; set; } = string.Empty;
+
+    public ICollection<User> Users { get; set; } = new List<User>();
 }
 
 /// <summary>
-/// Rappresenta la taglia/dimensione di una nave o di una banchina (es. XL, L, M, S).
+/// Represents the size of a ship or a berth (e.g. XL, L, M, S).
 /// </summary>
-public class Dimensione
+public class Size
 {
-    public int IdDimensione { get; set; }
-    public string NomeDimensione { get; set; } = string.Empty;
+    public int SizeId { get; set; }
+    public string SizeName { get; set; } = string.Empty;
+
+    public ICollection<Berth> Berths { get; set; } = new List<Berth>();
+    public ICollection<ListaNavi> ListaNavi { get; set; } = new List<ListaNavi>();
 }
 
 /// <summary>
-/// Rappresenta un utente registrato che può eseguire operazioni nel sistema portuale.
+/// Represents a registered user who can perform operations in the harbor system.
 /// </summary>
-public class Utente
+public class User
 {
-    public int IdUtente { get; set; }
-    public string Nome { get; set; } = string.Empty;
+    public int UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public int IdRuolo { get; set; }
-    public Ruolo Ruolo { get; set; } = null!;
+    public int RoleId { get; set; }
+    public Role Role { get; set; } = null!;
+    public ICollection<Ship> Ships { get; set; } = new List<Ship>();
 }
 
 /// <summary>
-/// Rappresenta una banchina fisica del porto predisposta per l'attracco di navi di una specifica dimensione.
+/// Represents a physical berth in the harbor prepared for ships of a specific size to dock.
 /// </summary>
-public class Banchina
+public class Berth
 {
-    public int IdBanchina { get; set; }
-    public string NomeBanchina { get; set; } = string.Empty;
-    public int IdDimensione { get; set; }
-    public Dimensione Dimensione { get; set; } = null!;
+    public int BerthId { get; set; }
+    public string BerthName { get; set; } = string.Empty;
+    public int SizeId { get; set; }
+    public Size Size { get; set; } = null!;
     
-    // Lista di tutte le occupazioni temporali associate a questa banchina
-    public ICollection<Occupazione> Occupazioni { get; set; } = new List<Occupazione>();
+    // List of all temporal occupancies associated with this berth
+    public ICollection<Occupancy> Occupancies { get; set; } = new List<Occupancy>();
 }
 
 /// <summary>
-/// Rappresenta una nave registrata nell'applicazione con le sue preferenze di sosta ed il suo stato corrente.
+/// Represents the lookup list of ship names grouped by size.
 /// </summary>
-public class Nave
+public class ListaNavi
 {
-    public int IdNave { get; set; }
+    public int IdListaNavi { get; set; }
     public string NomeNave { get; set; } = string.Empty;
-    public int GiornoArrivo { get; set; }
-    public int DurataOccupazione { get; set; }
-    
-    // Stato corrente della nave: 'Pending' (in attesa), 'Assigned' (assegnata), 'Departed' (salpata)
-    public string Stato { get; set; } = "Pending"; 
-    public string? Note { get; set; }
-    public int IdDimensione { get; set; }
-    public Dimensione Dimensione { get; set; } = null!;
-    public int IdUtente { get; set; }
-    public Utente Utente { get; set; } = null!;
+    public int FK_Id_Dimensione { get; set; }
+
+    public Size Dimensione { get; set; } = null!;
+    public ICollection<Ship> Navi { get; set; } = new List<Ship>();
 }
 
 /// <summary>
-/// Rappresenta l'occupazione temporale di una banchina da parte di una nave a partire da un determinato giorno d'inizio.
+/// Represents a ship registered in the application with its docking preferences and current status.
 /// </summary>
-public class Occupazione
+public class Ship
 {
-    public int IdOccupazione { get; set; }
-    public int GiornoInizio { get; set; }
-    public int IdNave { get; set; }
-    public Nave Nave { get; set; } = null!;
-    public int IdBanchina { get; set; }
-    public Banchina Banchina { get; set; } = null!;
-    public int IdUtente { get; set; }
-    public Utente Utente { get; set; } = null!;
+    public int ShipId { get; set; }
+    public int ArrivalDay { get; set; }
+    public int DurationDays { get; set; }
+    
+    // Current status of the ship: 'Pending' (waiting), 'Assigned' (assigned), 'Departed' (departed)
+    public string Status { get; set; } = "Pending"; 
+    public string? Notes { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+    public int IdListaNavi { get; set; }
+    public ListaNavi ListaNavi { get; set; } = null!;
+    public ICollection<Occupancy> Occupancies { get; set; } = new List<Occupancy>();
 }
 
 /// <summary>
-/// Rappresenta lo stato globale del sistema, tra cui il giorno virtuale corrente.
-/// Gestito come un'entità singleton (singola riga con ID=1).
+/// Represents the temporal occupancy of a berth by a ship starting from a specific start day.
+/// </summary>
+public class Occupancy
+{
+    public int OccupancyId { get; set; }
+    public int StartDay { get; set; }
+    public int ShipId { get; set; }
+    public Ship Ship { get; set; } = null!;
+    public int BerthId { get; set; }
+    public Berth Berth { get; set; } = null!;
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
+}
+
+/// <summary>
+/// Represents the global system state, including the current virtual day.
+/// Managed as a singleton entity (single row with ID=1).
 /// </summary>
 public class SystemState
 {
     public int Id { get; set; } = 1;
     public int CurrentDay { get; set; } = 1;
 }
+
+
 

@@ -1,4 +1,4 @@
-﻿using BlueHarbor.Application.DTOs;
+using BlueHarbor.Application.DTOs;
 using BlueHarbor.Application.Interfaces;
 using BlueHarbor.Application.Security;
 using BlueHarbor.Infrastructure.Repositories;
@@ -8,42 +8,60 @@ using Microsoft.AspNetCore.Mvc;
 namespace BlueHarbor.Controllers;
 
 // ============================================================
-// SHIPS CONTROLLER - Ruolo: Operatore
+// SHIPS CONTROLLER - Role: Operator
 // ============================================================
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = Roles.Operatore + "," + Roles.Scheduler)]
-public class ShipsController(IShipService shipService, IShipRepository shipRepository) : ControllerBase
+[Authorize(Roles = Roles.Operator + "," + Roles.Scheduler)]
+public class ShipsController(
+    IShipService shipService,
+    IShipRepository shipRepository,
+    IListaNaviRepository listaNaviRepository) : ControllerBase
 {
     /// <summary>
-    /// Recupera tutte le navi registrate nel sistema.
-    /// Include informazioni sulla banchina assegnata (se presente).
-    /// Accessibile sia all'Operatore che allo Scheduler.
+    /// Retrieves the ship templates available for creation.
+    /// </summary>
+    [HttpGet("ship-list")]
+    public async Task<IActionResult> GetListaNavi()
+    {
+        var listaNavi = await listaNaviRepository.GetAllAsync();
+        var result = listaNavi
+            .Select(item => new ListaNaviDto(item.IdListaNavi, item.NomeNave, item.Dimensione.SizeName))
+            .OrderBy(item => item.Name)
+            .ToList();
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Retrieves all ships registered in the system.
+    /// Includes information about the assigned berth (if any).
+    /// Accessible to both the Operator and the Scheduler.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllShips()
     {
-        // ✅ Chiama direttamente il repository (non il service)
-        // perché GetAllShipsAsync è una query semplice senza logica di business
+        // ✅ Calls the repository directly (not the service)
+        // because GetAllShipsAsync is a simple query with no business logic
         var ships = await shipRepository.GetAllShipsAsync();
         return Ok(ships);
     }
 
     /// <summary>
-    /// Registra una nuova nave nel sistema.
-    /// Dimensione, giorno di arrivo e durata vengono generati automaticamente.
+    /// Registers a new ship in the system.
+    /// Size, arrival day, and duration are generated automatically.
     /// </summary>
-    /// <param name="request">Dati della nave (Name obbligatorio, Notes opzionale)</param>
-    /// <returns>La nave creata con i dati generati</returns>
-    /// <response code="201">Nave creata con successo</response>
-    /// <response code="400">Dati di input non validi (es. nome vuoto o troppo corto)</response>
+    /// <param name="request">Ship data (Name required, Notes optional)</param>
+    /// <returns>The created ship with generated data</returns>
+    /// <response code="201">Ship created successfully</response>
+    /// <response code="400">Invalid input data (e.g. empty or too-short name)</response>
     [HttpPost]
-    [Authorize(Roles = Roles.Operatore)]
+    [Authorize(Roles = Roles.Operator)]
     public async Task<IActionResult> CreateShip([FromBody] CreateShipRequest request)
     {
-        // ✅ La validazione è gestita automaticamente da [ApiController]
-        // tramite le Data Annotations su CreateShipRequest.
-        // Se il ModelState è invalido, ASP.NET restituisce 400 automaticamente.
+        // ✅ Validation is handled automatically by [ApiController]
+        // via Data Annotations on CreateShipRequest.
+        // If ModelState is invalid, ASP.NET returns 400 automatically.
         
         try
         {
@@ -52,29 +70,29 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
         }
         catch (Exception)
         {
-            return StatusCode(500, "Si è verificato un errore interno durante la creazione della nave.");
+            return StatusCode(500, "An internal error occurred while creating the ship.");
         }
     }
 
     /// <summary>
-    /// Recupera i dettagli di una singola nave tramite ID.
+    /// Retrieves the details of a single ship by ID.
     /// </summary>
-    /// <param name="id">ID della nave</param>
-    /// <returns>Dettagli della nave</returns>
-    /// <response code="200">Nave trovata</response>
-    /// <response code="404">Nave non trovata</response>
+    /// <param name="id">Ship ID</param>
+    /// <returns>Ship details</returns>
+    /// <response code="200">Ship found</response>
+    /// <response code="404">Ship not found</response>
     [HttpGet("{id}")]
-    [Authorize(Roles = Roles.Operatore)]
+    [Authorize(Roles = Roles.Operator)]
     public async Task<IActionResult> GetShip(int id)
     {
-        var ship = await shipRepository.GetByIdAsync(id);
+        var ship = (await shipRepository.GetAllShipsAsync()).FirstOrDefault(s => s.ShipId == id);
         if (ship == null) return NotFound();
         return Ok(ship);
     }
 }
 
 // ============================================================
-// SCHEDULER CONTROLLER - Ruolo: Scheduler
+// SCHEDULER CONTROLLER - Role: Scheduler
 // ============================================================
 [ApiController]
 [Route("api/scheduler")]
@@ -82,7 +100,7 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
 public class SchedulerController(ISchedulerService schedulerService) : ControllerBase
 {
     /// <summary>
-    /// Recupera l'elenco di tutte le banchine con le relative occupazioni.
+    /// Retrieves the list of all berths with their respective occupancies.
     /// </summary>
     [HttpGet("berths")]
     public async Task<IActionResult> GetBerths()
@@ -92,7 +110,7 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
     }
 
     /// <summary>
-    /// Recupera l'elenco delle navi in stato "Pending" da assegnare.
+    /// Retrieves the list of ships in "Pending" status waiting for assignment.
     /// </summary>
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingShips()
@@ -102,14 +120,14 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
     }
 
     /// <summary>
-    /// Assegna una nave a una banchina specifica.
-    /// Calcola automaticamente il primo slot temporale disponibile.
+    /// Assigns a ship to a specific berth.
+    /// Automatically calculates the first available time slot.
     /// </summary>
-    /// <param name="request">ShipId e BerthId</param>
-    /// <returns>Dettagli dell'assegnazione (giorni di inizio/fine, nuovo stato)</returns>
-    /// <response code="200">Assegnazione completata</response>
-    /// <response code="400">Dimensione incompatibile o nave non in stato Pending</response>
-    /// <response code="404">Nave o banchina non trovata</response>
+    /// <param name="request">ShipId and BerthId</param>
+    /// <returns>Assignment details (start/end days, new status)</returns>
+    /// <response code="200">Assignment completed</response>
+    /// <response code="400">Incompatible size or ship not in Pending status</response>
+    /// <response code="404">Ship or berth not found</response>
     [HttpPost("assign")]
     public async Task<IActionResult> AssignShip([FromBody] AssignShipRequest request)
     {
@@ -128,13 +146,13 @@ public class SchedulerController(ISchedulerService schedulerService) : Controlle
         }
         catch (Exception)
         {
-            return StatusCode(500, "Errore interno durante l'assegnazione.");
+            return StatusCode(500, "Internal error during assignment.");
         }
     }
 }
 
 // ============================================================
-// SYSTEM CONTROLLER - Ruolo: Entrambi (Operatore e Scheduler)
+// SYSTEM CONTROLLER - Role: Both (Operator and Scheduler)
 // ============================================================
 [ApiController]
 [Route("api/system")]
@@ -144,7 +162,7 @@ public class SystemController(
     ISystemStateRepository systemStateRepository) : ControllerBase
 {
     /// <summary>
-    /// Recupera il giorno virtuale corrente del sistema.
+    /// Retrieves the current virtual day of the system.
     /// </summary>
     [HttpGet("day")]
     public async Task<IActionResult> GetCurrentDay()
@@ -154,8 +172,8 @@ public class SystemController(
     }
 
     /// <summary>
-    /// Avanza il giorno virtuale di 1 unità.
-    /// Attiva in background il job Hangfire per aggiornare le navi partite.
+    /// Advances the virtual day by 1 unit.
+    /// Triggers a background Hangfire job to update departed ships.
     /// </summary>
     [HttpPost("next-day")]
     public async Task<IActionResult> NextDay()
@@ -167,7 +185,7 @@ public class SystemController(
         }
         catch (Exception)
         {
-            return StatusCode(500, "Errore interno durante l'avanzamento del giorno.");
+            return StatusCode(500, "Internal error while advancing the day.");
         }
     }
 }

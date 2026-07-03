@@ -15,8 +15,8 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
     try {
       const result = await assignShip(ship.id, berth.id)
       onSuccess(result)
-      // Non serve chiamare onClose() qui: onSuccess setta modalBerth=null
-      // che smonta il componente automaticamente.
+      // No need to call onClose() here: onSuccess sets modalBerth=null
+      // which unmounts the component automatically.
     } catch (err) {
       setError(err.message)
     } finally {
@@ -36,7 +36,7 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div className="bg-navy px-6 py-4 flex items-center justify-between">
-          <h3 className="text-white font-semibold text-base">Conferma Assegnazione</h3>
+          <h3 className="text-white font-semibold text-base">Confirm Assignment</h3>
           <button
             onClick={onClose}
             disabled={loading}
@@ -51,19 +51,19 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <p className="text-sm text-slate-600">
-            Stai per assegnare la nave alla banchina selezionata. Il sistema calcolerà
-            automaticamente il primo slot temporale disponibile.
+            You are about to assign the ship to the selected berth. The system will automatically
+            calculate the first available time slot.
           </p>
 
           {/* Ship info */}
           <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Nave</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Ship</p>
             <div className="flex items-center gap-3">
               <SizeBadge size={ship.size} />
               <div>
                 <p className="font-semibold text-navy">{ship.name}</p>
                 <p className="text-xs text-slate-500">
-                  Arrivo: Giorno {ship.arrivalDay} · Durata: {ship.durationDays} giorni
+                  Arrival: Day {ship.arrivalDay} · Duration: {ship.durationDays} days
                 </p>
               </div>
             </div>
@@ -78,12 +78,12 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
 
           {/* Berth info */}
           <div className="bg-navy-50 rounded-xl p-4 space-y-2">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Banchina</p>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Berth</p>
             <div className="flex items-center gap-3">
               <SizeBadge size={berth.size} />
               <div>
                 <p className="font-semibold text-navy">{berth.name}</p>
-                <p className="text-xs text-slate-500">Capacità: navi {berth.size}</p>
+                <p className="text-xs text-slate-500">Capacity: {berth.size} ships</p>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
         {/* Footer */}
         <div className="px-6 pb-5 flex gap-3 justify-end">
           <button onClick={onClose} disabled={loading} className="btn-secondary">
-            Annulla
+            Cancel
           </button>
           <button onClick={handleConfirm} disabled={loading} className="btn-primary flex items-center gap-2">
             {loading ? (
@@ -107,9 +107,9 @@ export default function AssignModal({ ship, berth, onClose, onSuccess }) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                Assegnazione...
+                Assigning...
               </>
-            ) : 'Conferma Assegnazione'}
+            ) : 'Confirm Assignment'}
           </button>
         </div>
       </div>

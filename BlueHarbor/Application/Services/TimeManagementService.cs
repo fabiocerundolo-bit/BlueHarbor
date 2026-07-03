@@ -5,8 +5,8 @@ using Hangfire;
 namespace BlueHarbor.Application.Services;
 
 /// <summary>
-/// Servizio responsabile della gestione del tempo virtuale di sistema.
-/// Gestisce l'avanzamento dei giorni e innesca i job asincroni per aggiornare lo stato delle navi in transito.
+/// Service responsible for managing the virtual system time.
+/// Handles day advancement and triggers asynchronous jobs to update the status of ships in transit.
 /// </summary>
 public class TimeManagementService(
     ISystemStateRepository systemStateRepository,
@@ -14,29 +14,29 @@ public class TimeManagementService(
     IBackgroundJobClient backgroundJobClient) : ITimeManagementService
 {
     /// <summary>
-    /// Avanza il giorno corrente di 1 unità nel database e accoda un job in background
-    /// su Hangfire per aggiornare lo stato delle navi la cui occupazione è terminata.
+    /// Advances the current day by 1 unit in the database and enqueues a background Hangfire job
+    /// to update the status of ships whose occupancy has ended.
     /// </summary>
-    /// <returns>Il nuovo giorno corrente calcolato.</returns>
+    /// <returns>The newly calculated current day.</returns>
     public async Task<int> AdvanceDayAsync()
     {
-        // 1. Avanza il giorno virtuale nel database
+        // 1. Advance the virtual day in the database
         int newDay = await systemStateRepository.AdvanceDayAsync();
 
-        // 2. Enqueuea il job di Hangfire per elaborare le navi partite in background in maniera asincrona
+        // 2. Enqueue the Hangfire job to process departed ships asynchronously in the background
         backgroundJobClient.Enqueue<ITimeManagementService>(service => service.ProcessDepartedShipsAsync(newDay));
 
         return newDay;
     }
 
     /// <summary>
-    /// Elabora le navi che sono già salpate/partite.
-    /// Questo metodo viene eseguito in background come worker Hangfire.
+    /// Processes ships that have already departed.
+    /// This method is executed in the background as a Hangfire worker.
     /// </summary>
-    /// <param name="currentDay">Il giorno corrente di riferimento per determinare le scadenze delle occupazioni.</param>
+    /// <param name="currentDay">The current reference day used to determine occupancy expiries.</param>
     public async Task ProcessDepartedShipsAsync(int currentDay)
     {
-        // Questa logica gira in background, gestita da Hangfire
+        // This logic runs in the background, managed by Hangfire
         await shipRepository.UpdateAssignedShipsToDepartedAsync(currentDay);
     }
 }
