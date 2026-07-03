@@ -11,23 +11,15 @@ public static class DbInitializerExtensions
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BlueHarborDbContext>();
 
-        // In a development environment, if the DB exists but has no tables (or has an old schema),
-        // EnsureCreatedAsync will do nothing. To resolve error 208, we force recreation on failure.
         try 
         {
-            await dbContext.Database.EnsureCreatedAsync();
-            
-            // Immediate check
-            if (!await dbContext.Berths.AnyAsync())
-            {
-                Console.WriteLine("Manual seed not detected. EnsureCreatedAsync may not have created the tables.");
-            }
+            await dbContext.Database.MigrateAsync();
         }
         catch (Exception)
         {
-            Console.WriteLine("Inconsistent database detected. Attempting regeneration...");
+            Console.WriteLine("Database migration failed. Attempting a clean regeneration...");
             await dbContext.Database.EnsureDeletedAsync();
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database.MigrateAsync();
         }
 
         Console.WriteLine("Database initialized successfully.");

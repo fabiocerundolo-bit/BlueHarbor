@@ -62,6 +62,22 @@ public interface IShipRepository
 }
 
 /// <summary>
+/// Repository interface for the ship lookup list entity.
+/// </summary>
+public interface IListaNaviRepository
+{
+    /// <summary>
+    /// Retrieves a ship lookup item by ID, including its size relation.
+    /// </summary>
+    Task<ListaNavi?> GetByIdAsync(int id);
+
+    /// <summary>
+    /// Retrieves all ship lookup items including their size relation.
+    /// </summary>
+    Task<IEnumerable<ListaNavi>> GetAllAsync();
+}
+
+/// <summary>
 /// Repository interface for the Berth entity.
 /// </summary>
 public interface IBerthRepository

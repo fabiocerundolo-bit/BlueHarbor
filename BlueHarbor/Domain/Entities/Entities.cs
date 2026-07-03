@@ -10,7 +10,7 @@ public class Role
     public int RoleId { get; set; }
     public string RoleName { get; set; } = string.Empty;
 
-    public ICollection<User> Users { get; set; }
+    public ICollection<User> Users { get; set; } = new List<User>();
 }
 
 /// <summary>
@@ -21,8 +21,8 @@ public class Size
     public int SizeId { get; set; }
     public string SizeName { get; set; } = string.Empty;
 
-    public ICollection<Ship> Ships { get; set; }
-    public ICollection<Berth> Berths { get; set; }
+    public ICollection<Berth> Berths { get; set; } = new List<Berth>();
+    public ICollection<ListaNavi> ListaNavi { get; set; } = new List<ListaNavi>();
 }
 
 /// <summary>
@@ -36,7 +36,7 @@ public class User
     public string Password { get; set; } = string.Empty;
     public int RoleId { get; set; }
     public Role Role { get; set; } = null!;
-    public ICollection<Ship> Ships { get; set; }
+    public ICollection<Ship> Ships { get; set; } = new List<Ship>();
 }
 
 /// <summary>
@@ -54,23 +54,35 @@ public class Berth
 }
 
 /// <summary>
+/// Represents the lookup list of ship names grouped by size.
+/// </summary>
+public class ListaNavi
+{
+    public int IdListaNavi { get; set; }
+    public string NomeNave { get; set; } = string.Empty;
+    public int FK_Id_Dimensione { get; set; }
+
+    public Size Dimensione { get; set; } = null!;
+    public ICollection<Ship> Navi { get; set; } = new List<Ship>();
+}
+
+/// <summary>
 /// Represents a ship registered in the application with its docking preferences and current status.
 /// </summary>
 public class Ship
 {
     public int ShipId { get; set; }
-    public string ShipName { get; set; } = string.Empty;
     public int ArrivalDay { get; set; }
     public int DurationDays { get; set; }
     
     // Current status of the ship: 'Pending' (waiting), 'Assigned' (assigned), 'Departed' (departed)
     public string Status { get; set; } = "Pending"; 
     public string? Notes { get; set; }
-    public int SizeId { get; set; }
-    public Size Size { get; set; } = null!;
     public int UserId { get; set; }
     public User User { get; set; } = null!;
-    public int IdShipList {get ; set; }   // Foreign key to the ShipList entity
+    public int IdListaNavi { get; set; }
+    public ListaNavi ListaNavi { get; set; } = null!;
+    public ICollection<Occupancy> Occupancies { get; set; } = new List<Occupancy>();
 }
 
 /// <summary>

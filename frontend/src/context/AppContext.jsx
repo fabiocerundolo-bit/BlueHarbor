@@ -17,12 +17,14 @@ export function AppProvider({ children }) {
   )
   const [currentDay, setCurrentDay] = useState(null)  // Harbor current virtual day
   const [ships, setShips] = useState([])              // List of all registered ships (used by the operator)
+  const [shipList, setShipList] = useState([])        // Ship templates available for creation
   const [pendingShips, setPendingShips] = useState([]) // Ships waiting for assignment (used by the scheduler)
   const [berths, setBerths] = useState([])            // Berths and planned occupancies (used by the scheduler)
 
   // Loading states for the user interface
   const [dayLoading, setDayLoading] = useState(false)
   const [shipsLoading, setShipsLoading] = useState(false)
+  const [shipListLoading, setShipListLoading] = useState(false)
   const [berthsLoading, setBerthsLoading] = useState(false)
 
   const [error, setError] = useState(null)            // Last error message captured from the API
@@ -63,10 +65,24 @@ export function AppProvider({ children }) {
     }
   }, [clearError])
 
-  // Registers a new ship by sending data to the backend and prepending it to the local list
-  const doCreateShip = useCallback(async (name, notes) => {
+  // Reloads the list of ship templates used by the operator form.
+  const refreshShipList = useCallback(async (role) => {
+    setShipListLoading(true)
     clearError()
-    const ship = await api.createShip('Operator', { name, notes })
+    try {
+      const data = await api.fetchShipList(role ?? roleRef.current)
+      setShipList(data)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setShipListLoading(false)
+    }
+  }, [clearError])
+
+  // Registers a new ship by sending data to the backend and prepending it to the local list
+  const doCreateShip = useCallback(async (idListaNavi, notes) => {
+    clearError()
+    const ship = await api.createShip('Operator', { idListaNavi, notes })
     setShips((prev) => [ship, ...prev])
     return ship
   }, [clearError])
@@ -136,7 +152,7 @@ export function AppProvider({ children }) {
 
   // ── ROLE SWITCH (Data Synchronization) ─────────────────────────────
 
-  // Handles switching roles between Operator and Scheduler, forcing the correct data to load.
+  // Handles switching roles between Operator and Scheduler and forces the correct data to load.
   // Persists the chosen role in localStorage to survive page refreshes.
   const setRole = useCallback((r) => {
     localStorage.setItem('bh_role', r)
@@ -154,6 +170,7 @@ export function AppProvider({ children }) {
   // Loads appropriate data based on the role already saved in localStorage
   useEffect(() => {
     refreshDay()
+    refreshShipList('Operator')
     if (roleRef.current === 'Operator') {
       refreshShips()
     } else {
@@ -168,16 +185,19 @@ export function AppProvider({ children }) {
       setRole,
       currentDay,
       ships,
+      shipList,
       pendingShips,
       berths,
       dayLoading,
       shipsLoading,
+      shipListLoading,
       berthsLoading,
       error,
       clearError,
       refreshDay,
       advanceDay: doAdvanceDay,
       refreshShips,
+      refreshShipList,
       createShip: doCreateShip,
       refreshPendingShips,
       refreshBerths,

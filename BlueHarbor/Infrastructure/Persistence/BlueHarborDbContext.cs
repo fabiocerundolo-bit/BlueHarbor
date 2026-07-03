@@ -14,20 +14,19 @@ public class BlueHarborDbContext : DbContext
     public DbSet<Ship> Ships => Set<Ship>();
     public DbSet<Occupancy> Occupancies => Set<Occupancy>();
     public DbSet<SystemState> SystemStates => Set<SystemState>();
-
-    public DbSet<ShipList> ShipLists => Set<ShipList>(); // Add DbSet for ShipList entity
+    public DbSet<ListaNavi> ListaNavi => Set<ListaNavi>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
         // Table Name Mappings
-        modelBuilder.Entity<Role>().ToTable("Role").HasKey(r => r.RoleId);
-        modelBuilder.Entity<Size>().ToTable("Size").HasKey(d => d.SizeId);
-        modelBuilder.Entity<User>().ToTable("User").HasKey(u => u.UserId);
-        modelBuilder.Entity<Berth>().ToTable("Berth").HasKey(b => b.BerthId);
-        modelBuilder.Entity<Ship>().ToTable("Ship").HasKey(n => n.ShipId);
-        modelBuilder.Entity<Occupancy>().ToTable("Occupancy").HasKey(o => o.OccupancyId);
+        modelBuilder.Entity<Role>().ToTable("Ruolo").HasKey(r => r.RoleId);
+        modelBuilder.Entity<Size>().ToTable("Dimensione").HasKey(d => d.SizeId);
+        modelBuilder.Entity<User>().ToTable("Utente").HasKey(u => u.UserId);
+        modelBuilder.Entity<Berth>().ToTable("Banchina").HasKey(b => b.BerthId);
+        modelBuilder.Entity<Ship>().ToTable("Nave").HasKey(n => n.ShipId);
+        modelBuilder.Entity<Occupancy>().ToTable("Occupazione").HasKey(o => o.OccupancyId);
 
         // 1. SystemState configuration (Singleton)
         modelBuilder.Entity<SystemState>()
@@ -44,6 +43,17 @@ public class BlueHarborDbContext : DbContext
             new Size { SizeId = 2, SizeName = "L" },
             new Size { SizeId = 3, SizeName = "M" },
             new Size { SizeId = 4, SizeName = "S" }
+        );
+
+        modelBuilder.Entity<ListaNavi>().HasData(
+            new ListaNavi { IdListaNavi = 1, NomeNave = "MSC Splendida", FK_Id_Dimensione = 1 },
+            new ListaNavi { IdListaNavi = 2, NomeNave = "Costa Favolosa", FK_Id_Dimensione = 1 },
+            new ListaNavi { IdListaNavi = 3, NomeNave = "Norwegian Epic", FK_Id_Dimensione = 2 },
+            new ListaNavi { IdListaNavi = 4, NomeNave = "Celebrity Reflection", FK_Id_Dimensione = 2 },
+            new ListaNavi { IdListaNavi = 5, NomeNave = "Queen Mary 2", FK_Id_Dimensione = 3 },
+            new ListaNavi { IdListaNavi = 6, NomeNave = "Disney Dream", FK_Id_Dimensione = 3 },
+            new ListaNavi { IdListaNavi = 7, NomeNave = "Seabourn Odyssey", FK_Id_Dimensione = 4 },
+            new ListaNavi { IdListaNavi = 8, NomeNave = "Wind Star", FK_Id_Dimensione = 4 }
         );
 
         modelBuilder.Entity<Berth>().HasData(
@@ -65,27 +75,44 @@ public class BlueHarborDbContext : DbContext
         // Relationships
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role)
-            .WithMany()
+            .WithMany(r => r.Users)
             .HasForeignKey(u => u.RoleId);
 
         modelBuilder.Entity<Berth>()
             .HasOne(b => b.Size)
-            .WithMany()
+            .WithMany(s => s.Berths)
             .HasForeignKey(b => b.SizeId);
 
-        modelBuilder.Entity<Ship>()
-            .HasOne(n => n.Size)
-            .WithMany()
-            .HasForeignKey(n => n.SizeId);
+        modelBuilder.Entity<ListaNavi>(entity =>
+        {
+            entity.ToTable("ListaNavi");
+            entity.HasKey(e => e.IdListaNavi);
+
+            entity.HasOne(e => e.Dimensione)
+                .WithMany(d => d.ListaNavi)
+                .HasForeignKey(e => e.FK_Id_Dimensione)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Navi)
+                .WithOne(n => n.ListaNavi)
+                .HasForeignKey(n => n.IdListaNavi)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<Ship>()
             .HasOne(n => n.User)
-            .WithMany()
+            .WithMany(u => u.Ships)
             .HasForeignKey(n => n.UserId);
+
+        modelBuilder.Entity<Ship>()
+            .HasOne(n => n.ListaNavi)
+            .WithMany(ln => ln.Navi)
+            .HasForeignKey(n => n.IdListaNavi)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Occupancy>()
             .HasOne(o => o.Ship)
-            .WithMany()
+            .WithMany(s => s.Occupancies)
             .HasForeignKey(o => o.ShipId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -99,15 +126,5 @@ public class BlueHarborDbContext : DbContext
             .HasOne(o => o.User)
             .WithMany()
             .HasForeignKey(o => o.UserId);
-
-        modelBuilder.Entity<ShipList>(entity => // Configure ShipList entity
-        {
-            entity.ToTable("ShipList");
-            entity.HasKey(e => e.IdShipList);
-            entity.HasOne(e => e.Size)
-                    .WithMany(d => d.ShipLists)
-                    .HasForeignKey(e => e.SizeId)
-                    .OnDelete(DeleteBehavior.Cascade);
-        });
     }
 }

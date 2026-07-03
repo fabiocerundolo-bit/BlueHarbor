@@ -11,27 +11,29 @@ namespace BlueHarbor.Application.Services;
 /// </summary>
 public class ShipService(
     IShipRepository shipRepository,
+    IListaNaviRepository listaNaviRepository,
     ISystemStateRepository stateRepository) : IShipService
 {
     /// <summary>
     /// Registers a new ship in the system by pseudo-randomly generating its size,
     /// expected arrival day, and duration of stay.
     /// </summary>
-    /// <param name="request">Basic ship data (Name and Notes).</param>
+    /// <param name="request">Ship lookup ID and optional notes.</param>
     /// <returns>Details of the created ship.</returns>
     public async Task<ShipResponseDto> CreateShipAsync(CreateShipRequest request)
     {
         var state = await stateRepository.GetAsync();
-        
-        // Assign a random size (1=XL, 2=L, 3=M, 4=S)
-        int randomSizeId = Random.Shared.Next(1, 5);
-        string[] sizeNames = ["XL", "L", "M", "S"];
+
+        var listaNave = await listaNaviRepository.GetByIdAsync(request.IdListaNavi);
+        if (listaNave == null)
+        {
+            throw new KeyNotFoundException("Ship not found in the catalog.");
+        }
         
         var ship = new Ship
         {
-            ShipName = request.Name.Trim(),
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-            SizeId = randomSizeId,
+            IdListaNavi = request.IdListaNavi,
             // Planned arrival day between tomorrow (current day + 1) and the next 30 days
             ArrivalDay = state.CurrentDay + Random.Shared.Next(1, 31),
             // Occupancy duration between 3 and 15 days
@@ -44,9 +46,9 @@ public class ShipService(
         
         return new ShipResponseDto(
             ship.ShipId,
-            ship.ShipName,
+            listaNave.NomeNave,
             ship.Notes,
-            sizeNames[randomSizeId - 1],
+            listaNave.Dimensione.SizeName,
             ship.ArrivalDay,
             ship.DurationDays,
             ship.Status

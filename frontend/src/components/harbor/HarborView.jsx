@@ -255,7 +255,7 @@ export default function HarborView() {
   if (berths.length === 0) {
     return (
       <div className="card flex items-center justify-center py-20">
-        <p className="text-slate-400 text-sm">Caricamento dati porto...</p>
+        <p className="text-slate-400 text-sm">Loading harbor data...</p>
       </div>
     )
   }
@@ -277,7 +277,7 @@ export default function HarborView() {
         <div className="flex items-center gap-3">
           <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
           <h2 className="text-sm font-semibold tracking-wide">
-            Vista Porto · <span className="text-sky-300">Giorno {currentDay ?? "—"}</span>
+            Harbor View · <span className="text-sky-300">Day {currentDay ?? "—"}</span>
           </h2>
         </div>
         <div className="flex items-center gap-4">

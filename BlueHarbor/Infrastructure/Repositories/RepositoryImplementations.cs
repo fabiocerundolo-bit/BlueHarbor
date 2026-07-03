@@ -13,7 +13,9 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
 {
     public async Task<Ship?> GetByIdAsync(int id) =>
         await context.Ships
-            .Include(n => n.Size)
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
+            .Include(n => n.User)
             .FirstOrDefaultAsync(n => n.ShipId == id);
 
     public async Task<IEnumerable<Ship>> GetByStatusAsync(string status) => 
@@ -25,9 +27,10 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
     public async Task<IEnumerable<PendingShipDto>> GetPendingShipsAsync()
     {
         return await context.Ships
-            .Include(n => n.Size)
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
             .Where(s => s.Status == "Pending")
-            .Select(s => new PendingShipDto(s.ShipId, s.ShipName, s.Size.SizeName, s.ArrivalDay, s.DurationDays))
+            .Select(s => new PendingShipDto(s.ShipId, s.ListaNavi.NomeNave, s.ListaNavi.Dimensione.SizeName, s.ArrivalDay, s.DurationDays))
             .ToListAsync();
     }
 
@@ -38,14 +41,15 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
     public async Task<IEnumerable<ShipDto>> GetAllShipsAsync()
     {
         return await context.Ships
-            .Include(n => n.Size)
+            .Include(n => n.ListaNavi)
+            .ThenInclude(ln => ln.Dimensione)
             .Include(n => n.User)
             .OrderByDescending(s => s.ShipId)
             .Select(s => new ShipDto(
                 s.ShipId, 
-                s.ShipName, 
+                s.ListaNavi.NomeNave, 
                 s.Notes, 
-                s.Size.SizeName, 
+                s.ListaNavi.Dimensione.SizeName, 
                 s.ArrivalDay, 
                 s.DurationDays, 
                 s.Status,
@@ -125,6 +129,22 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
 }
 
 /// <summary>
+/// Concrete implementation of the repository for managing the ship lookup list.
+/// </summary>
+public class ListaNaviRepository(BlueHarborDbContext context) : IListaNaviRepository
+{
+    public async Task<ListaNavi?> GetByIdAsync(int id) =>
+        await context.ListaNavi
+            .Include(ln => ln.Dimensione)
+            .FirstOrDefaultAsync(ln => ln.IdListaNavi == id);
+
+    public async Task<IEnumerable<ListaNavi>> GetAllAsync() =>
+        await context.ListaNavi
+            .Include(ln => ln.Dimensione)
+            .ToListAsync();
+}
+
+/// <summary>
 /// Concrete implementation of the repository for managing physical Berths.
 /// </summary>
 public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
@@ -152,6 +172,7 @@ public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
             .Include(b => b.Size)
             .Include(b => b.Occupancies)
             .ThenInclude(a => a.Ship)
+            .ThenInclude(s => s.ListaNavi)
             .Select(b => new BerthDto(
                 b.BerthId,
                 b.BerthName,
@@ -159,7 +180,7 @@ public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
                 b.Occupancies.Select(a => new BerthAssignmentDto(
                     a.OccupancyId,
                     a.ShipId,
-                    a.Ship.ShipName,
+                    a.Ship.ListaNavi.NomeNave,
                     a.StartDay,
                     // End occupancy calculated as: start + duration - 1
                     a.StartDay + a.Ship.DurationDays - 1,

@@ -8,10 +8,9 @@ namespace BlueHarbor.Application.DTOs;
 /// Request DTO for creating a new ship by the Operator.
 /// </summary>
 public record CreateShipRequest(
-    [Required(ErrorMessage = "The ship name is required.")]
-    [MinLength(3, ErrorMessage = "The name must be at least 3 characters long.")]
-    [MaxLength(100, ErrorMessage = "The name cannot exceed 100 characters.")]
-    string Name, 
+    [Required(ErrorMessage = "The ship list ID is required.")]
+    [Range(1, int.MaxValue, ErrorMessage = "The ship list ID is not valid.")]
+    int IdListaNavi,
     [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
     string? Notes);
 
@@ -42,6 +41,15 @@ public record ShipResponseDto(
     int ArrivalDay,
     int DurationDays,
     string Status
+);
+
+/// <summary>
+/// Lightweight DTO describing a ship template available for creation.
+/// </summary>
+public record ListaNaviDto(
+    int Id,
+    string Name,
+    string Size
 );
 
 /// <summary>

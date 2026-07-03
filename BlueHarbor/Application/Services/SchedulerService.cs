@@ -52,9 +52,9 @@ public class SchedulerService(IShipRepository shipRepository, IBerthRepository b
         if (berth == null) throw new KeyNotFoundException("Berth not found.");
 
         // 3. Domain rule: the berth must be compatible by size
-        if (berth.SizeId != ship.SizeId)
+        if (berth.SizeId != ship.ListaNavi.FK_Id_Dimensione)
         {
-            throw new InvalidOperationException($"Incompatible size. Ship: {ship.SizeId}, Berth: {berth.SizeId}");
+            throw new InvalidOperationException($"Incompatible size. Ship: {ship.ListaNavi.FK_Id_Dimensione}, Berth: {berth.SizeId}");
         }
 
         // 4. Algorithm: Find the first available time slot starting from the ship's arrival day

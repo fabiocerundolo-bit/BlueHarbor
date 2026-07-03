@@ -22,6 +22,7 @@ builder.Services.AddDbContext<BlueHarborDbContext>(options =>
 
 // Repositories
 builder.Services.AddScoped<IShipRepository, ShipRepository>();
+builder.Services.AddScoped<IListaNaviRepository, ListaNaviRepository>();
 builder.Services.AddScoped<IBerthRepository, BerthRepository>();
 builder.Services.AddScoped<ISystemStateRepository, SystemStateRepository>();
 

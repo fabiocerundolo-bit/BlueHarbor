@@ -10,7 +10,7 @@ public enum ShipSize
 
 public enum ShipStatus
 {
-    Pending,    // In attesa di assegnazione
-    Assigned,   // Banchina assegnata
-    Departed    // Occupazione terminata
+    Pending,    // Waiting for assignment
+    Assigned,   // Berth assigned
+    Departed    // Occupancy ended
 }

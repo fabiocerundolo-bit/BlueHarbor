@@ -65,6 +65,10 @@ export const advanceDay = (role) =>
 export const createShip = (role, data) =>
   request('POST', '/api/ships', role, data)
 
+// Retrieves the list of ship templates available for creation
+export const fetchShipList = (role) =>
+  request('GET', '/api/ships/ship-list', role)
+
 // Retrieves the complete list of all registered ships
 export const fetchAllShips = (role) =>
   request('GET', '/api/ships', role)

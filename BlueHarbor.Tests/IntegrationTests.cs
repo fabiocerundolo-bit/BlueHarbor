@@ -47,6 +47,7 @@ public class IntegrationTests
         // Arrange
         var context = GetDbContext();
         var shipRepo = new ShipRepository(context);
+        var listaNaviRepo = new ListaNaviRepository(context);
         var berthRepo = new BerthRepository(context);
         var stateRepo = new SystemStateRepository(context);
         
@@ -55,7 +56,7 @@ public class IntegrationTests
         
         // Initialize services with correct dependencies
         var timeManagementService = new TimeManagementService(stateRepo, shipRepo, backgroundJobClientMock.Object);
-        var shipService = new ShipService(shipRepo, stateRepo);
+        var shipService = new ShipService(shipRepo, listaNaviRepo, stateRepo);
         var schedulerService = new SchedulerService(shipRepo, berthRepo);
 
         // 1. Verify the initial system day is set to 1
@@ -64,11 +65,11 @@ public class IntegrationTests
         Assert.Equal(1, initialDay);
 
         // 2. Create a ship (automatically generates size, arrival day, and stay duration)
-        var createRequest = new CreateShipRequest("Test Ship", "Some notes");
+        var createRequest = new CreateShipRequest(1, "Some notes");
         var shipResponse = await shipService.CreateShipAsync(createRequest);
         
         Assert.NotNull(shipResponse);
-        Assert.Equal("Test Ship", shipResponse.Name);
+        Assert.Equal("MSC Splendida", shipResponse.Name);
         Assert.Equal("Pending", shipResponse.Status);
         Assert.True(shipResponse.ArrivalDay > 1);
 
@@ -171,8 +172,8 @@ public class IntegrationTests
         var schedulerService = new SchedulerService(shipRepo, berthRepo);
 
         // Create two XL ships (SizeId = 1) that arrive on the same day
-        var ship1 = new Ship { ShipName = "XL 1", SizeId = 1, ArrivalDay = 5, DurationDays = 10, Status = "Pending", UserId = 1 };
-        var ship2 = new Ship { ShipName = "XL 2", SizeId = 1, ArrivalDay = 5, DurationDays = 5, Status = "Pending", UserId = 1 };
+        var ship1 = new Ship { IdListaNavi = 1, ArrivalDay = 5, DurationDays = 10, Status = "Pending", UserId = 1 };
+        var ship2 = new Ship { IdListaNavi = 2, ArrivalDay = 5, DurationDays = 5, Status = "Pending", UserId = 1 };
         await shipRepo.AddAsync(ship1);
         await shipRepo.AddAsync(ship2);
 
@@ -199,7 +200,7 @@ public class IntegrationTests
         var stateRepo = new SystemStateRepository(context);
         var schedulerService = new SchedulerService(shipRepo, berthRepo);
 
-        var shipS = new Ship { ShipName = "Small", SizeId = 4, ArrivalDay = 2, DurationDays = 3, Status = "Pending", UserId = 1 };
+        var shipS = new Ship { IdListaNavi = 7, ArrivalDay = 2, DurationDays = 3, Status = "Pending", UserId = 1 };
         await shipRepo.AddAsync(shipS);
 
         var xlBerth = (await context.Berths.ToListAsync()).First(b => b.SizeId == 1);
@@ -218,15 +219,16 @@ public class IntegrationTests
         // Arrange
         var context = GetDbContext();
         var shipRepo = new ShipRepository(context);
+        var listaNaviRepo = new ListaNaviRepository(context);
         var stateRepo = new SystemStateRepository(context);
-        var shipService = new ShipService(shipRepo, stateRepo);
+        var shipService = new ShipService(shipRepo, listaNaviRepo, stateRepo);
 
         // Act
-        var response = await shipService.CreateShipAsync(new CreateShipRequest("Automatic Ship", "Generated notes"));
+        var response = await shipService.CreateShipAsync(new CreateShipRequest(1, "Generated notes"));
 
         // Assert
         Assert.NotNull(response);
-        Assert.Equal("Automatic Ship", response.Name);
+        Assert.Equal("MSC Splendida", response.Name);
         Assert.Equal("Generated notes", response.Notes);
         Assert.Equal("Pending", response.Status);
         Assert.InRange(response.ArrivalDay, 2, 31);

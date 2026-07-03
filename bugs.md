@@ -1,82 +1,82 @@
-# Analisi dei Bug Rilevati - BlueHarbor
+# Bug Analysis - BlueHarbor
 
-In conformità con le istruzioni ricevute, i bug rilevati sono stati esclusivamente analizzati e documentati, senza apportare modifiche o ottimizzazioni al codice sorgente. Di seguito è riportato l'elenco dettagliato dei problemi riscontrati nel sistema.
-
----
-
-## 1. Fallimento del Test di Sicurezza (`Security_Scheduler_CannotCreateShip`)
-* **File di riferimento**: [IntegrationTests.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor.Tests/IntegrationTests.cs#L133-L154)
-* **Dettagli**: 
-  Il test d'integrazione `Security_Scheduler_CannotCreateShip` fallisce sistematicamente. Il test recupera l'attributo `[Authorize]` a livello di classe `ShipsController` ed esegue una verifica di uguaglianza esatta con il ruolo `Operatore`:
-  ```csharp
-  Assert.Equal(Roles.Operatore, authorizeAttr.Roles);
-  ```
-  Tuttavia, la classe `ShipsController` è decorata a livello globale con:
-  ```csharp
-  [Authorize(Roles = Roles.Operatore + "," + Roles.Scheduler)]
-  ```
-  poiché l'endpoint `GetAllShips` deve essere accessibile a entrambi i ruoli. La restrizione specifica per la creazione è definita correttamente solo a livello del singolo metodo `CreateShip`. Per questo motivo il test fallisce (confronta `"Operatore"` con `"Operatore,Scheduler"`).
+In line with the instructions received, the detected issues were only analyzed and documented, without making changes or optimizations to the source code. The following is the detailed list of problems found in the system.
 
 ---
 
-## 2. Assegnazione Retroattiva delle Navi nel Passato (Algoritmo di Scheduling)
-* **File di riferimento**: [SchedulerService.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Application/Services/SchedulerService.cs#L61) nel metodo `AssignShipToBerthAsync`
-* **Dettagli**:
-  La pianificazione dello slot temporale per l'attracco invoca la funzione di ricerca a partire dal giorno di arrivo originario registrato per la nave:
+## 1. Security Test Failure (`Security_Scheduler_CannotCreateShip`)
+* **Reference file**: [IntegrationTests.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor.Tests/IntegrationTests.cs#L133-L154)
+* **Details**:
+  The `Security_Scheduler_CannotCreateShip` integration test fails consistently. The test retrieves the `[Authorize]` attribute at the `ShipsController` class level and performs an exact equality check against the `Operator` role:
+  ```csharp
+  Assert.Equal(Roles.Operator, authorizeAttr.Roles);
+  ```
+  However, the `ShipsController` class is globally decorated with:
+  ```csharp
+  [Authorize(Roles = Roles.Operator + "," + Roles.Scheduler)]
+  ```
+  because the `GetAllShips` endpoint must be accessible to both roles. The specific restriction for ship creation is correctly defined only at the `CreateShip` method level. For this reason, the test fails (it compares `"Operator"` with `"Operator,Scheduler"`).
+
+---
+
+## 2. Retroactive Ship Assignment in the Past (Scheduling Algorithm)
+* **Reference file**: [SchedulerService.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Application/Services/SchedulerService.cs#L61) in the `AssignShipToBerthAsync` method
+* **Details**:
+  The time-slot planning logic for docking starts the search from the ship's originally recorded arrival day:
   ```csharp
   int startDay = FindFirstAvailableSlot(berth, ship.GiornoArrivo, ship.DurataOccupazione);
   ```
-  Se l'operatore fa scorrere il tempo del porto (avanzando il giorno virtuale tramite l'azione "Next Day") senza pianificare immediatamente la nave in attesa, il giorno corrente (`CurrentDay`) diventerà maggiore del giorno di arrivo della nave (`ship.GiornoArrivo`). 
-  In questa situazione, l'algoritmo calcolerà lo slot basandosi su una data passata e assegnerà retroattivamente la nave a un giorno precedente a quello attuale del porto. Il calcolo dello slot iniziale dovrebbe basarsi su `Math.Max(ship.GiornoArrivo, currentDay)`.
+  If the operator advances harbor time (moving the virtual day forward through the "Next Day" action) without immediately scheduling the pending ship, the current day (`CurrentDay`) becomes greater than the ship's arrival day (`ship.GiornoArrivo`).
+  In that situation, the algorithm calculates the slot based on a past date and retroactively assigns the ship to a day earlier than the harbor's current day. The initial slot calculation should be based on `Math.Max(ship.GiornoArrivo, currentDay)`.
 
 ---
 
-## 3. Race Condition al Cambio Ruolo nel Frontend (React Context)
-* **File di riferimento**: [AppContext.jsx](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/frontend/src/context/AppContext.jsx#L143-L153) nella callback `setRole`
-* **Dettagli**:
-  All'interno di `setRole(r)`, viene eseguita la mutazione dello stato React tramite `setRoleState(r)`. Subito dopo, viene invocato `refreshShips()` in modo sincrono per caricare le navi:
+## 3. Role-Switch Race Condition in the Frontend (React Context)
+* **Reference file**: [AppContext.jsx](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/frontend/src/context/AppContext.jsx#L143-L153) in the `setRole` callback
+* **Details**:
+  Inside `setRole(r)`, the React state is updated through `setRoleState(r)`. Immediately after that, `refreshShips()` is invoked synchronously to load ships:
   ```javascript
-  if (r === 'Operatore') refreshShips()
+  if (r === 'Operator') refreshShips()
   ```
-  Tuttavia, poiché gli aggiornamenti dello stato React sono asincroni, la funzione `refreshShips` viene invocata quando la variabile `roleRef.current` (o `role`) fa ancora riferimento al vecchio ruolo (es. `'Scheduler'`). Di conseguenza, il client effettua la chiamata HTTP `/api/ships` inviando l'header mock `X-Username: scheduler1` invece di `operatore1`.
+  However, because React state updates are asynchronous, `refreshShips` runs while `roleRef.current` (or `role`) still points to the previous role (for example, `'Scheduler'`). As a result, the client sends the HTTP request to `/api/ships` with the mock header `X-Username: scheduler1` instead of `operator1`.
 
 ---
 
-## 4. Vincolo Eccessivamente Rigido di Dimensione delle Banchine
-* **File di riferimento**: [SchedulerService.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Application/Services/SchedulerService.cs#L55-L58)
-* **Dettagli**:
-  La logica di compatibilità tra navi e banchine impone un controllo di uguaglianza esatto sull'identificativo della dimensione:
+## 4. Overly Strict Berth Size Constraint
+* **Reference file**: [SchedulerService.cs](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Application/Services/SchedulerService.cs#L55-L58)
+* **Details**:
+  The ship-to-berth compatibility logic enforces an exact equality check on the size identifier:
   ```csharp
   if (berth.IdDimensione != ship.IdDimensione)
   {
       throw new InvalidOperationException(...);
   }
   ```
-  In uno scenario portuale reale, le navi di dimensioni inferiori possono attraccare in banchine più grandi (ad esempio una nave `Small` in una banchina `Medium`, `Large` o `XL`). L'imposizione del vincolo di uguaglianza esatta (`!=`) limita drasticamente l'allocazione delle risorse portuali e non permette alle navi piccole di sfruttare gli spazi più grandi vuoti.
+  In a real harbor scenario, smaller ships can dock at larger berths (for example, a `Small` ship in a `Medium`, `Large`, or `XL` berth). Enforcing exact equality (`!=`) drastically limits berth utilization and prevents smaller ships from using available larger spaces.
 
 ---
 
-## 5. Dipendenza Fragile dal Timeout per la Consistenza di Hangfire (Design Smell / Race Condition)
-* **File di riferimento**: [AppContext.jsx](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/frontend/src/context/AppContext.jsx#L121-L124) nella callback `doAdvanceDay`
-* **Dettagli**:
-  Quando l'utente avanza il giorno corrente nel porto, la richiesta HTTP `/api/system/next-day` accoda in modo asincrono un job Hangfire in background per impostare le navi salpate come `"Departed"`. 
-  Il frontend, per compensare questa elaborazione asincrona, implementa un ritardo forzato di 700ms prima di ricaricare i dati:
+## 5. Fragile Timeout Dependency for Hangfire Consistency (Design Smell / Race Condition)
+* **Reference file**: [AppContext.jsx](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/frontend/src/context/AppContext.jsx#L121-L124) in the `doAdvanceDay` callback
+* **Details**:
+  When the user advances the current harbor day, the `/api/system/next-day` HTTP request asynchronously queues a Hangfire background job to mark departed ships as `"Departed"`.
+  To compensate for this asynchronous processing, the frontend inserts a forced 700ms delay before reloading data:
   ```javascript
   await new Promise(resolve => setTimeout(resolve, 700))
   ```
-  Questa soluzione introduce una race condition latente: se il server subisce rallentamenti o se il database è congestionato, il job di Hangfire potrebbe impiegare più di 700ms per completarsi. Di conseguenza, il frontend effettuerà il fetch dei dati prima che lo stato sia aggiornato a database, continuando a mostrare le navi come `"Assigned"` anziché `"Departed"`.
+  This introduces a latent race condition: if the server slows down or the database is busy, the Hangfire job may take longer than 700ms to complete. As a result, the frontend fetches data before the database state is updated and keeps showing ships as `"Assigned"` instead of `"Departed"`.
 
 ---
 
-## 6. Disallineamento nei Nomi del Database nel Flusso di Setup
-* **File di riferimento**: [appsettings.json](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/appsettings.json#L3) e [Create BlueHarbor.sql](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Create%20BlueHarbor.sql#L1)
-* **Dettagli**:
-  La stringa di connessione predefinita configurata in `appsettings.json` punta a un database denominato `BlueHarborDb`:
+## 6. Database Name Mismatch in the Setup Flow
+* **Reference files**: [appsettings.json](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/appsettings.json#L3) and [Create BlueHarbor.sql](file:///c:/Users/fabio.cerundolo/Documents/BlueHarbor-masterv01/BlueHarbor/BlueHarbor/Create%20BlueHarbor.sql#L1)
+* **Details**:
+  The default connection string configured in `appsettings.json` points to a database named `BlueHarborDb`:
   ```json
   "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=BlueHarborDb;..."
   ```
-  Tuttavia, lo script SQL di inizializzazione manuale `Create BlueHarbor.sql` inizia con l'istruzione:
+  However, the manual initialization SQL script `Create BlueHarbor.sql` starts with:
   ```sql
   CREATE DATABASE BlueHarbor;
   ```
-  Questa discrepanza di nomi può indurre in errore l'amministratore del sistema o causare la coesistenza accidentale di due database separati su istanze locali, disallineando i dati creati manualmente rispetto a quelli gestiti dall'ORM Entity Framework.
+  This naming mismatch can confuse the system administrator or accidentally lead to two separate databases coexisting on local instances, causing manually created data to drift from the data managed by the Entity Framework ORM.

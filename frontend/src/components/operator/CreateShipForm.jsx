@@ -2,23 +2,25 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 
 export default function CreateShipForm() {
-  const { createShip } = useApp()
-  const [name, setName] = useState('')
+  const { createShip, shipList, shipListLoading, refreshShipList } = useApp()
+  const [selectedShipId, setSelectedShipId] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [lastCreated, setLastCreated] = useState(null)
 
+  const selectedShip = shipList.find((item) => String(item.id) === String(selectedShipId)) ?? null
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!selectedShipId) return
     setLoading(true)
     setError(null)
     setLastCreated(null)
     try {
-      const ship = await createShip(name.trim(), notes.trim() || null)
+      const ship = await createShip(Number(selectedShipId), notes.trim() || null)
       setLastCreated(ship)
-      setName('')
+      setSelectedShipId('')
       setNotes('')
     } catch (err) {
       setError(err.message)
@@ -39,16 +41,24 @@ export default function CreateShipForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-            Ship Name <span className="text-red-500">*</span>
+            Ship Template <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. MS Adriatic Star"
+          <select
+            value={selectedShipId}
+            onChange={(e) => setSelectedShipId(e.target.value)}
             className="input-field"
             required
-          />
+            disabled={shipListLoading || shipList.length === 0}
+          >
+            <option value="">
+              {shipListLoading ? 'Loading ship templates...' : 'Select a ship'}
+            </option>
+            {shipList.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} · {item.size}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -68,7 +78,7 @@ export default function CreateShipForm() {
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             The system will automatically assign size, arrival day, and duration.
           </p>
-          <button type="submit" disabled={loading || !name.trim()} className="btn-primary w-full justify-center flex items-center gap-2">
+          <button type="submit" disabled={loading || !selectedShipId} className="btn-primary w-full justify-center flex items-center gap-2">
             {loading ? (
               <>
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -99,6 +109,21 @@ export default function CreateShipForm() {
       {error && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-xs text-red-600">{error}</p>
+        </div>
+      )}
+
+      {!shipListLoading && shipList.length === 0 && (
+        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700">
+            No ship templates available. Try refreshing the catalog.
+          </p>
+          <button
+            type="button"
+            onClick={() => refreshShipList('Operator')}
+            className="mt-2 text-xs font-semibold text-amber-800 hover:text-amber-900"
+          >
+            Refresh catalog
+          </button>
         </div>
       )}
     </div>

@@ -13,8 +13,26 @@ namespace BlueHarbor.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = Roles.Operator + "," + Roles.Scheduler)]
-public class ShipsController(IShipService shipService, IShipRepository shipRepository) : ControllerBase
+public class ShipsController(
+    IShipService shipService,
+    IShipRepository shipRepository,
+    IListaNaviRepository listaNaviRepository) : ControllerBase
 {
+    /// <summary>
+    /// Retrieves the ship templates available for creation.
+    /// </summary>
+    [HttpGet("ship-list")]
+    public async Task<IActionResult> GetListaNavi()
+    {
+        var listaNavi = await listaNaviRepository.GetAllAsync();
+        var result = listaNavi
+            .Select(item => new ListaNaviDto(item.IdListaNavi, item.NomeNave, item.Dimensione.SizeName))
+            .OrderBy(item => item.Name)
+            .ToList();
+
+        return Ok(result);
+    }
+
     /// <summary>
     /// Retrieves all ships registered in the system.
     /// Includes information about the assigned berth (if any).
@@ -67,7 +85,7 @@ public class ShipsController(IShipService shipService, IShipRepository shipRepos
     [Authorize(Roles = Roles.Operator)]
     public async Task<IActionResult> GetShip(int id)
     {
-        var ship = await shipRepository.GetByIdAsync(id);
+        var ship = (await shipRepository.GetAllShipsAsync()).FirstOrDefault(s => s.ShipId == id);
         if (ship == null) return NotFound();
         return Ok(ship);
     }
