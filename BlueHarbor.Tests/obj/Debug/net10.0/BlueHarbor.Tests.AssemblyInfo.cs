@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BlueHarbor.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8a07d8ca386c79a95ad29e5669871099a73c46aa")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b35439eb3159842e4c34e6a7f43c908d967e7a9")]
 [assembly: System.Reflection.AssemblyProductAttribute("BlueHarbor.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BlueHarbor.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
