@@ -40,7 +40,7 @@ services:
     depends_on:
       db:
         condition: service_healthy # Starts the API only after SQL Server passes the health check
-      restart: on-failure # Automatically restarts the container only in case of abnormal termination
+    restart: on-failure # Automatically restarts the container only in case of abnormal termination
 
   # ── Frontend React + Nginx ────────────────────────────────────────────────
   # Container per il frontend web basato su React, servito da un server web Nginx
