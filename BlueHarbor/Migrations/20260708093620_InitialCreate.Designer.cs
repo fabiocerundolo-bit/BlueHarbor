@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlueHarbor.Migrations
 {
     [DbContext(typeof(BlueHarborDbContext))]
-    [Migration("20260703071433_AddListaNaviAndUpdateShipModel")]
-    partial class AddListaNaviAndUpdateShipModel
+    [Migration("20260708093620_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
