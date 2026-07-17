@@ -80,9 +80,9 @@ export function AppProvider({ children }) {
   }, [clearError])
 
   // Registers a new ship by sending data to the backend and prepending it to the local list
-  const doCreateShip = useCallback(async (idListaNavi, notes) => {
+  const doCreateShip = useCallback(async (idListaNavi, customName, notes) => {
     clearError()
-    const ship = await api.createShip('Operator', { idListaNavi, notes })
+    const ship = await api.createShip('Operator', { idListaNavi, customName, notes })
     setShips((prev) => [ship, ...prev])
     return ship
   }, [clearError])
@@ -131,11 +131,6 @@ export function AppProvider({ children }) {
     try {
       const data = await api.advanceDay(roleRef.current)
       setCurrentDay(data.newCurrentDay)
-
-      // Wait 700ms to give the Hangfire background job time to complete
-      // the ship status update (e.g. Assigned -> Departed)
-      // before reloading data from the backend
-      await new Promise(resolve => setTimeout(resolve, 700))
 
       // Update data for the current role to show the updated state
       if (roleRef.current === 'Operator') {

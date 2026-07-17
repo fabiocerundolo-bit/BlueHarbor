@@ -12,7 +12,9 @@ public record CreateShipRequest(
     [Range(1, int.MaxValue, ErrorMessage = "The ship list ID is not valid.")]
     int IdListaNavi,
     [MaxLength(500, ErrorMessage = "Notes cannot exceed 500 characters.")]
-    string? Notes);
+    string? Notes,
+    [MaxLength(200, ErrorMessage = "Ship name cannot exceed 200 characters.")]
+    string? CustomName = null);
 
 /// <summary>
 /// Detailed representation of a ship, including docking information and the assigned berth (if any).

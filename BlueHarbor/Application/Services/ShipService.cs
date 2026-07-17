@@ -32,6 +32,7 @@ public class ShipService(
         
         var ship = new Ship
         {
+            CustomName = string.IsNullOrWhiteSpace(request.CustomName) ? null : request.CustomName.Trim(),
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
             IdListaNavi = request.IdListaNavi,
             // Planned arrival day between tomorrow (current day + 1) and the next 30 days
@@ -46,7 +47,7 @@ public class ShipService(
         
         return new ShipResponseDto(
             ship.ShipId,
-            listaNave.NomeNave,
+            ship.CustomName ?? listaNave.NomeNave,
             ship.Notes,
             listaNave.Dimensione.SizeName,
             ship.ArrivalDay,
