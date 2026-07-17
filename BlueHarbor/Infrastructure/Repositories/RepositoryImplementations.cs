@@ -30,7 +30,7 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
             .Include(n => n.ListaNavi)
             .ThenInclude(ln => ln.Dimensione)
             .Where(s => s.Status == "Pending")
-            .Select(s => new PendingShipDto(s.ShipId, s.ListaNavi.NomeNave, s.ListaNavi.Dimensione.SizeName, s.ArrivalDay, s.DurationDays))
+            .Select(s => new PendingShipDto(s.ShipId, s.CustomName ?? s.ListaNavi.NomeNave, s.ListaNavi.Dimensione.SizeName, s.ArrivalDay, s.DurationDays))
             .ToListAsync();
     }
 
@@ -47,7 +47,7 @@ public class ShipRepository(BlueHarborDbContext context) : IShipRepository
             .OrderByDescending(s => s.ShipId)
             .Select(s => new ShipDto(
                 s.ShipId, 
-                s.ListaNavi.NomeNave, 
+                s.CustomName ?? s.ListaNavi.NomeNave, 
                 s.Notes, 
                 s.ListaNavi.Dimensione.SizeName, 
                 s.ArrivalDay, 
@@ -180,7 +180,7 @@ public class BerthRepository(BlueHarborDbContext context) : IBerthRepository
                 b.Occupancies.Select(a => new BerthAssignmentDto(
                     a.OccupancyId,
                     a.ShipId,
-                    a.Ship.ListaNavi.NomeNave,
+                    a.Ship.CustomName ?? a.Ship.ListaNavi.NomeNave,
                     a.StartDay,
                     // End occupancy calculated as: start + duration - 1
                     a.StartDay + a.Ship.DurationDays - 1,

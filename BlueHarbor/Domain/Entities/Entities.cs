@@ -83,6 +83,7 @@ public class Ship
     public int IdListaNavi { get; set; }
     public ListaNavi ListaNavi { get; set; } = null!;
     public ICollection<Occupancy> Occupancies { get; set; } = new List<Occupancy>();
+    public string? CustomName { get; set; }
 }
 
 /// <summary>

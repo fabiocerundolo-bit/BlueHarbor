@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext'
 export default function CreateShipForm() {
   const { createShip, shipList, shipListLoading, refreshShipList } = useApp()
   const [selectedShipId, setSelectedShipId] = useState('')
+  const [shipName, setShipName] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -13,15 +14,24 @@ export default function CreateShipForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!selectedShipId) return
+    if (!selectedShipId && !shipName.trim()) return
     setLoading(true)
     setError(null)
     setLastCreated(null)
     try {
-      const ship = await createShip(Number(selectedShipId), notes.trim() || null)
+      // Se l'utente ha digitato solo il nome senza selezionare dalla lista,
+      // scegliamo un IdListaNavi casuale dalla lista disponibile (necessario per la FK del backend).
+      // Il CustomName sovrascriverà il nome della nave nel DB.
+      let idListaNavi = Number(selectedShipId)
+      if (!idListaNavi) {
+        const randomItem = shipList[Math.floor(Math.random() * shipList.length)]
+        idListaNavi = randomItem ? randomItem.id : 1
+      }
+      const ship = await createShip(idListaNavi, notes.trim() || null, shipName.trim() || null)
       setLastCreated(ship)
       setSelectedShipId('')
       setNotes('')
+      setShipName('')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -41,14 +51,27 @@ export default function CreateShipForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-            Ship Template <span className="text-red-500">*</span>
+            Ship Name (manual)
+          </label>
+          <input
+            type="text"
+            value={shipName}
+            onChange={(e) => setShipName(e.target.value)}
+            placeholder="Type the ship name..."
+            className="input-field"
+            disabled={!!selectedShipId}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
+            — or select from list —
           </label>
           <select
             value={selectedShipId}
             onChange={(e) => setSelectedShipId(e.target.value)}
             className="input-field"
-            required
-            disabled={shipListLoading || shipList.length === 0}
+            disabled={shipListLoading || shipList.length === 0 || !!shipName.trim()}
           >
             <option value="">
               {shipListLoading ? 'Loading ship templates...' : 'Select a ship'}
@@ -78,7 +101,7 @@ export default function CreateShipForm() {
           <p className="text-xs text-slate-400 mb-3 leading-relaxed">
             The system will automatically assign size, arrival day, and duration.
           </p>
-          <button type="submit" disabled={loading || !selectedShipId} className="btn-primary w-full justify-center flex items-center gap-2">
+          <button type="submit" disabled={loading || (!selectedShipId && !shipName.trim())} className="btn-primary w-full justify-center flex items-center gap-2">
             {loading ? (
               <>
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
