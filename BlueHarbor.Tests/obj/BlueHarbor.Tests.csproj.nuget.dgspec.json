@@ -1,34 +1,40 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {}
+    "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {
+    "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
+        "projectUniqueName": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
         "projectName": "BlueHarbor.Tests",
-        "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
-        "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor.Tests\\obj\\",
+        "projectPath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
+        "packagesPath": "C:\\Users\\leonida.qemeqi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\leonida.qemeqi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "https://www.nuget.org/api/v2": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
-                "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj"
+              "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
+                "projectPath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj"
               }
             }
           }
@@ -91,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -369,23 +375,29 @@
         }
       }
     },
-    "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
+    "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+        "projectUniqueName": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
         "projectName": "BlueHarbor",
-        "projectPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
-        "packagesPath": "C:\\Users\\fabio.cerundolo\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fabio.cerundolo\\Documents\\BlueHarbor-v0102\\BlueHarbor\\BlueHarbor\\obj\\",
+        "projectPath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\BlueHarbor.csproj",
+        "packagesPath": "C:\\Users\\leonida.qemeqi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\fabio.cerundolo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\leonida.qemeqi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "https://www.nuget.org/api/v2": {}
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
@@ -461,7 +473,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
