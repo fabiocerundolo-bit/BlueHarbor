@@ -1,133 +1,133 @@
 # BlueHarbor
 
-## Descrizione
+## Description
 
-BlueHarbor è un'applicazione web full-stack per la **gestione operativa di un terminal container**. Digitalizza il coordinamento, oggi manuale, tra la registrazione delle navi in arrivo e la pianificazione dell'uso delle banchine.
+BlueHarbor is a full-stack web application for the **operational management of a container terminal**. It digitalises the coordination — currently handled manually — between registering incoming vessels and planning berth usage.
 
-> Il progetto nasce nell'ambito di un percorso didattico (*Learning by Project*): scenario di business, dati e regole sono fittizi e a scopo esclusivamente formativo.
+> This project was developed as part of an educational programme (*Learning by Project*): the business scenario, data and rules are fictional and intended solely for learning purposes.
 
-L'applicazione è composta da:
+The application consists of:
 
-- un **backend .NET (C#)**, organizzato come solution Visual Studio (`BlueHarbor.sln`), con architettura a livelli (Application / Domain / Infrastructure);
-- un **frontend React**;
-- uno **strato dati SQL Server**, gestito tramite EF Core;
-- esecuzione **containerizzata tramite Docker** (Docker Compose).
+- a **.NET (C#) backend**, structured as a Visual Studio solution (`BlueHarbor.sln`), following a layered architecture (Application / Domain / Infrastructure);
+- a **React frontend**;
+- a **SQL Server data layer**, managed via EF Core;
+- fully **containerised execution via Docker** (Docker Compose).
 
-### Ruoli
+### Roles
 
-L'applicazione supporta due ruoli operativi, ciascun utente associato a uno solo:
+The application supports two operational roles, each user assigned to exactly one:
 
-| Ruolo | Responsabilità |
-|-------|-----------------|
-| **Operator** | Registra nuove navi nel sistema e ne mantiene le informazioni/stato. Non gestisce l'assegnazione delle banchine. |
-| **Scheduler** | Visualizza le navi in attesa di assegnazione (`Pending`) e le assegna alle banchine disponibili secondo le regole di dominio. Gestisce le decisioni di pianificazione. |
+| Role | Responsibilities |
+|------|-----------------|
+| **Operator** | Registers new vessels in the system and maintains their information/status. Does not manage berth assignments. |
+| **Scheduler** | Views vessels awaiting assignment (`Pending`) and assigns them to available berths according to domain rules. Handles planning decisions. |
 
-Il ruolo viene determinato a partire dall'header HTTP `X-Username` (vedi sezione [Autenticazione](#autenticazione)).
+The role is determined from the `X-Username` HTTP header (see the [Authentication](#authentication) section).
 
-### Utenti mock
+### Mock Users
 
-| Username | Ruolo |
-|----------|-------|
+| Username | Role |
+|----------|------|
 | `operator1` | Operator |
 | `operator2` | Operator |
 | `scheduler1` | Scheduler |
 | `scheduler2` | Scheduler |
 
-### Modello temporale
+### Time Model
 
-Il sistema **non è real-time**: mantiene un **giorno corrente virtuale**, avanzato di un'unità alla volta tramite l'azione **Next Day**. Non vengono gestite ore o minuti.
+The system is **not real-time**: it maintains a **virtual current day**, advanced one unit at a time via the **Next Day** action. Hours and minutes are not tracked.
 
-L'azione Next Day:
-- avanza il giorno virtuale di una unità;
-- aggiorna l'elenco delle navi;
-- imposta automaticamente lo stato `Departed` per le navi che hanno completato il periodo di occupazione (tramite job **Hangfire** in background);
-- **non** effettua assegnazioni automatiche.
+The Next Day action:
+- advances the virtual day by one unit;
+- updates the list of vessels;
+- automatically sets the `Departed` status for vessels that have completed their occupation period (via a background **Hangfire** job);
+- does **not** perform automatic assignments.
 
-### Regole di dominio
+### Domain Rules
 
-**Dimensione delle navi**: `XL`, `L`, `M`, `S`.
+**Ship sizes**: `XL`, `L`, `M`, `S`.
 
-**Banchine disponibili** (insieme fisso):
+**Available berths** (fixed set):
 
-| Dimensione | Numero banchine |
-|------------|------------------|
-| XL         | 1                |
-| L          | 1                |
-| M          | 2                |
-| S          | 4                |
+| Size | Number of berths |
+|------|-----------------|
+| XL   | 1               |
+| L    | 1               |
+| M    | 2               |
+| S    | 4               |
 
-Una banchina può ospitare solo navi della propria dimensione.
+A berth can only accommodate vessels of its own size.
 
-**Creazione di una nave** (a cura dell'Operator): il sistema assegna automaticamente una dimensione casuale, un giorno di arrivo casuale (entro 30 giorni dal giorno corrente) e una durata di occupazione casuale (tra 3 e 15 giorni); l'Operator inserisce gli altri metadati (nome nave, note). La nave viene creata in stato `Pending`.
+**Creating a vessel** (by the Operator): the system automatically assigns a random size, a random arrival day (within 30 days from the current virtual day) and a random occupation duration (between 3 and 15 days); the Operator provides the remaining metadata (ship name, notes). The vessel is created with status `Pending`.
 
-**Ciclo di vita della nave**:
+**Ship lifecycle**:
 
 ```
 Pending  →  Assigned  →  Departed
 ```
 
-- `Pending`: in attesa di assegnazione
-- `Assigned`: banchina assegnata
-- `Departed`: occupazione terminata (stato conclusivo)
+- `Pending`: awaiting assignment
+- `Assigned`: berth assigned
+- `Departed`: occupation ended (terminal status)
 
-**Assegnazione (Scheduler)**: la banchina scelta deve essere compatibile per dimensione; il giorno di inizio è il primo giorno libero della banchina; se la banchina è occupata, la nave viene pianificata nel primo slot temporale disponibile. Al momento dell'assegnazione, lo stato della nave passa a `Assigned`.
+**Assignment (Scheduler)**: the chosen berth must be size-compatible; the start day is the first free day of the berth; if the berth is occupied, the vessel is scheduled in the first available time slot. Upon assignment, the vessel status changes to `Assigned`.
 
-### Fuori scope
+### Out of Scope
 
-Il sistema **non** deve: effettuare pianificazioni automatiche o ottimizzazioni, calcolare punteggi/KPI, gestire eventi real-time, modellare terminal reali o normative, consentire modifiche/riassegnazioni dopo l'assegnazione.
+The system must **not**: perform automatic planning or optimisations, calculate scores/KPIs, handle real-time events, model real terminals or regulations, or allow modifications/reassignments after assignment.
 
-## Stack tecnologico
+## Tech Stack
 
-| Livello       | Tecnologia                          |
-|---------------|--------------------------------------|
-| Backend       | C# / .NET 10, architettura a livelli (Application / Domain / Infrastructure) |
-| Frontend      | React + [Vite](https://vitejs.dev/), [Tailwind CSS](https://tailwindcss.com/) |
-| Database      | SQL Server 2022, accesso dati via EF Core (`BlueHarborDbContext`) |
-| Autenticazione | Header custom `X-Username` + schema Mock (`MockAuthenticationHandler`) |
-| Job in background | [Hangfire](https://www.hangfire.io/) (dashboard su `/hangfire`) |
-| API Docs      | Native .NET 10 OpenAPI + [Scalar UI](https://scalar.com/) (`/scalar/v1`) |
-| Test backend  | Progetto dedicato `BlueHarbor.Tests` |
-| Test e2e frontend | [Playwright](https://playwright.dev/) (`playwright.config.js`) |
-| Containerizzazione | Docker orchestrato con `docker-compose.yml`; il frontend in produzione viene servito da **nginx** (`nginx.conf`) |
-| IDE           | JetBrains Rider / Visual Studio (presenti file `.idea` e `.DotSettings.user`) |
+| Layer | Technology |
+|-------|-----------|
+| Backend | C# / .NET 10, layered architecture (Application / Domain / Infrastructure) |
+| Frontend | React + [Vite](https://vitejs.dev/), [Tailwind CSS](https://tailwindcss.com/) |
+| Database | SQL Server 2022, data access via EF Core (`BlueHarborDbContext`) |
+| Authentication | Custom header `X-Username` + Mock scheme (`MockAuthenticationHandler`) |
+| Background jobs | [Hangfire](https://www.hangfire.io/) (dashboard at `/hangfire`) |
+| API Docs | Native .NET 10 OpenAPI + [Scalar UI](https://scalar.com/) (`/scalar/v1`) |
+| Backend tests | Dedicated project `BlueHarbor.Tests` |
+| Frontend e2e tests | [Playwright](https://playwright.dev/) (`playwright.config.js`) |
+| Containerisation | Docker orchestrated with `docker-compose.yml`; frontend served in production by **nginx** (`nginx.conf`) |
+| IDE | JetBrains Rider / Visual Studio (`.idea` and `.DotSettings.user` files present) |
 
-## Struttura del progetto
+## Project Structure
 
 ```
 BlueHarbor/
-├── .idea/                          # Configurazione JetBrains Rider
-├── BlueHarbor/                     # Progetto principale (backend, .csproj)
-│   ├── Application/                 # Casi d'uso / logica applicativa
+├── .idea/                          # JetBrains Rider configuration
+├── BlueHarbor/                     # Main project (backend, .csproj)
+│   ├── Application/                 # Use cases / application logic
 │   │   ├── DTOs/                    # Data Transfer Objects
-│   │   ├── Interfaces/              # Interfacce servizi e repository
-│   │   ├── Security/                # MockUserDatabase + costanti Roles
-│   │   └── Services/                # Implementazioni dei servizi
-│   ├── Controllers/                 # Controller API (ShipsController, SchedulerController, SystemController)
-│   ├── Domain/                      # Entità e logica di dominio
+│   │   ├── Interfaces/              # Service and repository interfaces
+│   │   ├── Security/                # MockUserDatabase + Roles constants
+│   │   └── Services/                # Service implementations
+│   ├── Controllers/                 # API controllers (ShipsController, SchedulerController, SystemController)
+│   ├── Domain/                      # Domain entities and logic
 │   ├── Infrastructure/
 │   │   ├── Persistence/             # BlueHarborDbContext, DbInitializerExtensions
-│   │   └── Repositories/            # Implementazioni dei repository
-│   ├── Migrations/                  # Migrazioni EF Core
+│   │   └── Repositories/            # Repository implementations
+│   ├── Migrations/                  # EF Core migrations
 │   ├── Properties/
-│   │   └── launchSettings.json      # Porta locale: http://localhost:5151
-│   ├── Security/                    # MockAuthenticationHandler (lettura header X-Username)
-│   ├── appsettings.json             # Connection string (LocalDB per sviluppo locale)
+│   │   └── launchSettings.json      # Local port: http://localhost:5151
+│   ├── Security/                    # MockAuthenticationHandler (reads X-Username header)
+│   ├── appsettings.json             # Connection string (LocalDB for local development)
 │   ├── appsettings.Development.json
 │   ├── BlueHarbor.csproj
-│   ├── Create BlueHarbor.sql        # Script SQL di creazione iniziale del database
-│   ├── SQLQuery2.sql                # Script SQL di supporto (seed / query di utilità)
+│   ├── Create BlueHarbor.sql        # Initial database creation SQL script
+│   ├── SQLQuery2.sql                # Support SQL script (seed / utility queries)
 │   ├── Dockerfile
 │   └── Program.cs
-├── BlueHarbor.Tests/                # Unit/integration test backend
-├── frontend/                        # Applicazione client React
-│   ├── dist/                        # Build di produzione
-│   ├── e2e/                         # Test end-to-end (Playwright)
+├── BlueHarbor.Tests/                # Backend unit/integration tests
+├── frontend/                        # React client application
+│   ├── dist/                        # Production build
+│   ├── e2e/                         # End-to-end tests (Playwright)
 │   ├── public/
 │   ├── src/
-│   ├── test-results/                # Output test Playwright
-│   ├── .env.example                 # Variabili d'ambiente frontend (VITE_API_URL)
+│   ├── test-results/                # Playwright test output
+│   ├── .env.example                 # Frontend environment variables (VITE_API_URL)
 │   ├── Dockerfile
-│   ├── nginx.conf                   # Config nginx per servire il build in produzione
+│   ├── nginx.conf                   # nginx config for serving the production build
 │   ├── package.json
 │   ├── playwright.config.js
 │   ├── postcss.config.js
@@ -135,34 +135,34 @@ BlueHarbor/
 │   ├── vite.config.js
 │   └── index.html
 ├── BlueHarbor.sln
-├── docker-compose.yml               # Orchestrazione backend + frontend + DB
-├── bugs.md                          # Tracking bug/issue noti
-└── UnitTest1.cs                     # File di test isolato in root (da valutare se rimuovere)
+├── docker-compose.yml               # Backend + frontend + DB orchestration
+├── bugs.md                          # Known bug/issue tracking
+└── UnitTest1.cs                     # Isolated test file in root (consider removing)
 ```
 
-## Prerequisiti
+## Prerequisites
 
-**Per l'esecuzione (consigliato):**
-- Docker e Docker Compose
+**To run the application (recommended):**
+- Docker and Docker Compose
 
-**Per lo sviluppo locale senza Docker (opzionale):**
+**For local development without Docker (optional):**
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
-- [Node.js v24.15.0](https://nodejs.org/) (consigliato l'uso di [nvm](https://github.com/nvm-sh/nvm) per allinearsi alla versione)
-- SQL Server installato localmente
-- IDE consigliato: Visual Studio 2022 o JetBrains Rider
+- [Node.js v24.15.0](https://nodejs.org/) (using [nvm](https://github.com/nvm-sh/nvm) is recommended to match the version)
+- SQL Server installed locally
+- Recommended IDE: Visual Studio 2022 or JetBrains Rider
 
-## Avvio rapido (Docker)
+## Quick Start (Docker)
 
-Nell'ultima versione del progetto l'esecuzione avviene interamente tramite **Docker Compose**: non è necessario installare .NET SDK, Node.js o SQL Server in locale, Docker è sufficiente.
+The application runs entirely via **Docker Compose**: no local installation of .NET SDK, Node.js or SQL Server is needed — Docker is sufficient.
 
-### 1. Clonare il repository
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/fabiocerundolo-bit/BlueHarbor.git
 cd BlueHarbor
 ```
 
-### 2. Configurare le variabili d'ambiente del frontend
+### 2. Configure frontend environment variables
 
 ```bash
 cd frontend
@@ -170,62 +170,62 @@ cp .env.example .env
 cd ..
 ```
 
-Il file `.env.example` contiene:
+The `.env.example` file contains:
 
 ```env
 VITE_API_URL=/api
 ```
 
-La variabile `VITE_API_URL` indica il base path delle chiamate API dal frontend. Con Docker, il proxy nginx instrada automaticamente le chiamate a `/api` verso il backend.
+`VITE_API_URL` defines the base path for API calls from the frontend. With Docker, the nginx proxy automatically routes `/api` calls to the backend.
 
-Il backend non richiede un file `.env` separato: la connection string per Docker è già definita direttamente nel `docker-compose.yml` tramite la variabile d'ambiente `ConnectionStrings__DefaultConnection`.
+The backend does not require a separate `.env` file: the Docker connection string is already defined directly in `docker-compose.yml` via the `ConnectionStrings__DefaultConnection` environment variable.
 
-### 3. Build e avvio
+### 3. Build and start
 
 ```bash
 docker compose up --build
 ```
 
-Questo comando avvia i tre servizi definiti in `docker-compose.yml`:
+This command starts the three services defined in `docker-compose.yml`:
 
-| Servizio | Descrizione | Porta esposta |
-|----------|-------------|---------------|
+| Service | Description | Exposed port |
+|---------|-------------|-------------|
 | `db` | SQL Server 2022 | `1433` |
-| `api` | Backend ASP.NET Core (.NET 10) | `8080` |
-| `frontend` | Frontend React servito da nginx | `3001` |
+| `api` | ASP.NET Core backend (.NET 10) | `8080` |
+| `frontend` | React frontend served by nginx | `3001` |
 
-Al primo avvio il backend applica automaticamente le migrazioni EF Core e inizializza il database tramite `DbInitializerExtensions`.
+On first start, the backend automatically applies EF Core migrations and seeds the database via `DbInitializerExtensions`.
 
-**URL di accesso:**
+**Access URLs:**
 
-| Risorsa | URL |
-|---------|-----|
-| Applicazione (frontend) | http://localhost:3001 |
-| API backend | http://localhost:8080/api |
+| Resource | URL |
+|----------|-----|
+| Application (frontend) | http://localhost:3001 |
+| Backend API | http://localhost:8080/api |
 | Scalar API UI (docs) | http://localhost:8080/scalar/v1 |
 | Hangfire dashboard | http://localhost:8080/hangfire |
 
-### Comandi utili
+### Useful commands
 
 ```bash
-# Avvio in background
+# Start in background
 docker compose up -d --build
 
-# Visualizzare i log
+# View logs
 docker compose logs -f
 
-# Fermare i servizi
+# Stop services
 docker compose down
 
-# Fermare e rimuovere i volumi (reset database)
+# Stop and remove volumes (database reset)
 docker compose down -v
 ```
 
-## Configurazione
+## Configuration
 
 ### Backend (`appsettings.json`)
 
-Per lo sviluppo locale il backend usa SQL Server LocalDB:
+For local development the backend uses SQL Server LocalDB:
 
 ```json
 {
@@ -242,7 +242,7 @@ Per lo sviluppo locale il backend usa SQL Server LocalDB:
 }
 ```
 
-In ambiente Docker la connection string viene sovrascritta dalla variabile d'ambiente `ConnectionStrings__DefaultConnection` definita nel `docker-compose.yml`.
+In Docker, the connection string is overridden by the `ConnectionStrings__DefaultConnection` environment variable defined in `docker-compose.yml`.
 
 ### Frontend (`.env`)
 
@@ -250,11 +250,11 @@ In ambiente Docker la connection string viene sovrascritta dalla variabile d'amb
 VITE_API_URL=/api
 ```
 
-Non sono richiesti token o segreti aggiuntivi: l'autenticazione avviene tramite l'header `X-Username` (vedi sezione [Autenticazione](#autenticazione)).
+No additional tokens or secrets are required: authentication is handled via the `X-Username` header (see [Authentication](#authentication)).
 
-## Sviluppo locale (senza Docker)
+## Local Development (without Docker)
 
-Per lo sviluppo attivo su singole parti del progetto (es. hot-reload del frontend, debug del backend in IDE) è possibile eseguire i due servizi separatamente.
+For active development on individual parts of the project (e.g. frontend hot-reload, backend IDE debugging) both services can be run separately.
 
 ### Backend
 
@@ -264,11 +264,11 @@ dotnet restore
 dotnet run
 ```
 
-L'API sarà disponibile su:
+The API will be available at:
 - `http://localhost:5151` (HTTP)
 - `https://localhost:7062` (HTTPS)
 
-La documentazione Scalar sarà accessibile su `http://localhost:5151/scalar/v1`.
+The Scalar documentation will be accessible at `http://localhost:5151/scalar/v1`.
 
 ### Frontend
 
@@ -278,36 +278,36 @@ npm install
 npm run dev
 ```
 
-Il frontend sarà disponibile su `http://localhost:5173` (porta Vite di default).
+The frontend will be available at `http://localhost:5173` (Vite default port).
 
 ### Database
 
-Il database è gestito tramite **Entity Framework Core** (`BlueHarborDbContext`), con migrazioni in `BlueHarbor/Migrations/`. È inoltre presente uno script SQL di creazione dedicato (`Create BlueHarbor.sql`) e uno script di utilità (`SQLQuery2.sql`) per query di supporto/seed manuale.
+The database is managed via **Entity Framework Core** (`BlueHarborDbContext`), with migrations in `BlueHarbor/Migrations/`. A dedicated SQL creation script (`Create BlueHarbor.sql`) and a utility script (`SQLQuery2.sql`) are also present for manual seed/support queries.
 
 ```bash
 cd BlueHarbor
 dotnet ef database update
 ```
 
-Il backend, al primo avvio, esegue automaticamente le migrazioni e il seeding iniziale tramite `DbInitializerExtensions`.
+On first startup, the backend automatically runs migrations and initial seeding via `DbInitializerExtensions`.
 
-## Test
+## Testing
 
-Il progetto `BlueHarbor.Tests` contiene i test automatici del backend:
+The `BlueHarbor.Tests` project contains the automated backend tests:
 
 ```bash
 cd BlueHarbor.Tests
 dotnet test
 ```
 
-I test end-to-end del frontend sono realizzati con **Playwright** (cartella `frontend/e2e/`):
+Frontend end-to-end tests are built with **Playwright** (in the `frontend/e2e/` folder):
 
 ```bash
 cd frontend
 npx playwright test
 ```
 
-I risultati vengono salvati in `frontend/test-results/`.
+Results are saved to `frontend/test-results/`.
 
 ## API
 
@@ -315,81 +315,81 @@ I risultati vengono salvati in `frontend/test-results/`.
 
 #### Ships (`/api/ships`) — Operator + Scheduler
 
-| Metodo | Endpoint | Ruolo | Descrizione |
-|--------|----------|-------|-------------|
-| `GET` | `/api/ships` | Operator, Scheduler | Elenca tutte le navi registrate con banchina assegnata (se presente) |
-| `GET` | `/api/ships/{id}` | Operator | Recupera i dettagli di una nave specifica |
-| `GET` | `/api/ships/ship-list` | Operator, Scheduler | Recupera i template di navi disponibili per la creazione |
-| `POST` | `/api/ships` | Operator | Registra una nuova nave (dimensione, arrivo e durata generati automaticamente) |
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/ships` | Operator, Scheduler | Lists all registered vessels with assigned berth (if any) |
+| `GET` | `/api/ships/{id}` | Operator | Retrieves details of a specific vessel |
+| `GET` | `/api/ships/ship-list` | Operator, Scheduler | Retrieves available ship templates for creation |
+| `POST` | `/api/ships` | Operator | Registers a new vessel (size, arrival and duration generated automatically) |
 
-#### Scheduler (`/api/scheduler`) — solo Scheduler
+#### Scheduler (`/api/scheduler`) — Scheduler only
 
-| Metodo | Endpoint | Ruolo | Descrizione |
-|--------|----------|-------|-------------|
-| `GET` | `/api/scheduler/berths` | Scheduler | Elenca tutte le banchine con le rispettive occupazioni |
-| `GET` | `/api/scheduler/pending` | Scheduler | Elenca le navi in stato `Pending` in attesa di assegnazione |
-| `POST` | `/api/scheduler/assign` | Scheduler | Assegna una nave a una banchina (body: `{ "shipId": int, "berthId": int }`) |
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/scheduler/berths` | Scheduler | Lists all berths with their respective occupancies |
+| `GET` | `/api/scheduler/pending` | Scheduler | Lists vessels in `Pending` status awaiting assignment |
+| `POST` | `/api/scheduler/assign` | Scheduler | Assigns a vessel to a berth (body: `{ "shipId": int, "berthId": int }`) |
 
 #### System (`/api/system`) — Operator + Scheduler
 
-| Metodo | Endpoint | Ruolo | Descrizione |
-|--------|----------|-------|-------------|
-| `GET` | `/api/system/day` | Operator, Scheduler | Restituisce il giorno virtuale corrente |
-| `POST` | `/api/system/next-day` | Operator, Scheduler | Avanza il giorno virtuale di 1 unità |
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/system/day` | Operator, Scheduler | Returns the current virtual day |
+| `POST` | `/api/system/next-day` | Operator, Scheduler | Advances the virtual day by 1 unit |
 
-#### Altri
+#### Other
 
-| URL | Descrizione |
+| URL | Description |
 |-----|-------------|
-| `/scalar/v1` | Documentazione interattiva dell'API (Scalar UI) |
-| `/hangfire` | Dashboard Hangfire per monitorare i job in background |
+| `/scalar/v1` | Interactive API documentation (Scalar UI) |
+| `/hangfire` | Hangfire dashboard for monitoring background jobs |
 
-### Autenticazione
+### Authentication
 
-Il backend identifica l'utente tramite un header HTTP custom, `X-Username`, incluso in ogni richiesta al posto di un token JWT o di un cookie di sessione.
+The backend identifies the user via a custom HTTP header, `X-Username`, included in every request instead of a JWT token or session cookie.
 
-L'header viene letto da `MockAuthenticationHandler`, che:
-1. Estrae il valore di `X-Username`;
-2. Lo confronta con il dizionario `MockUserDatabase` (definito in `Application/Security/SecurityModels.cs`);
-3. Se riconosciuto, genera un `ClaimsPrincipal` con `ClaimTypes.Name` e `ClaimTypes.Role`;
-4. Se assente o non riconosciuto, restituisce rispettivamente `NoResult` o `Fail` (→ HTTP 401/403).
+The header is read by `MockAuthenticationHandler`, which:
+1. Extracts the value of `X-Username`;
+2. Looks it up in the `MockUserDatabase` dictionary (defined in `Application/Security/SecurityModels.cs`);
+3. If recognised, generates a `ClaimsPrincipal` with `ClaimTypes.Name` and `ClaimTypes.Role`;
+4. If missing or unrecognised, returns `NoResult` or `Fail` respectively (→ HTTP 401/403).
 
-**Utenti validi:**
+**Valid users:**
 
-| Username | Ruolo |
-|----------|-------|
+| Username | Role |
+|----------|------|
 | `operator1` | Operator |
 | `operator2` | Operator |
 | `scheduler1` | Scheduler |
 | `scheduler2` | Scheduler |
 
-**Esempio di chiamata curl:**
+**Example curl call:**
 
 ```bash
 curl -H "X-Username: operator1" http://localhost:8080/api/ships
 ```
 
-**Impostazione lato frontend:** dopo il login, il valore scelto viene allegato a ogni richiesta HTTP (es. tramite interceptor Axios/fetch).
+**Frontend setup:** after login, the chosen value is attached to every HTTP request (e.g. via an Axios/fetch interceptor).
 
-> ⚠️ **Nota di sicurezza**: un'autenticazione basata su un header arbitrario come `X-Username`, se non accompagnata da un meccanismo di verifica robusto, può essere facilmente falsificata. Questa soluzione è adatta esclusivamente all'ambiente didattico del progetto. In un contesto reale, valutare JWT, cookie `HttpOnly`/`Secure` o OAuth2/OpenID Connect.
+> ⚠️ **Security note**: authentication based on an arbitrary header such as `X-Username`, without a robust verification mechanism, can be easily spoofed. This approach is suitable exclusively for the educational context of this project. In a production environment, consider JWT, `HttpOnly`/`Secure` cookies, or OAuth2/OpenID Connect.
 
-## Documento architetturale (deliverable)
+## Architectural Document (deliverable)
 
-La consegna del progetto richiede, oltre all'applicazione funzionante, un breve documento/presentazione architetturale che copra:
+The project delivery requires, in addition to a working application, a brief architectural document/presentation covering:
 
-- [ ] **Architettura complessiva** — già in parte coperta da questo README (sezione [Stack tecnologico](#stack-tecnologico) e [Struttura del progetto](#struttura-del-progetto))
-- [ ] **Componenti principali e responsabilità** — `Application/` (servizi e interfacce), `Domain/` (entità), `Infrastructure/` (repository e persistenza), `Security/` (autenticazione mock)
-- [ ] **Modello dati ad alto livello** — entità principali: `Ship` (dimensione, giorno di arrivo, durata, stato), `Berth` (dimensione, occupazioni), `Assignment` (nave, banchina, giorno inizio/fine); si vedano `Domain/` ed `Migrations/` per i nomi reali
-- [ ] **Decisioni progettuali e compromessi** — es. header `X-Username` invece di autenticazione standard, modello a giorno virtuale, semplificazioni rispetto allo scope
+- [ ] **Overall architecture** — partly covered by this README ([Tech Stack](#tech-stack) and [Project Structure](#project-structure) sections)
+- [ ] **Main components and responsibilities** — `Application/` (services and interfaces), `Domain/` (entities), `Infrastructure/` (repositories and persistence), `Security/` (mock authentication)
+- [ ] **High-level data model** — main entities: `Ship` (size, arrival day, duration, status), `Berth` (size, occupancies), `Assignment` (vessel, berth, start/end day); see `Domain/` and `Migrations/` for actual names
+- [ ] **Design decisions and trade-offs** — e.g. `X-Username` header instead of standard authentication, virtual day model, simplifications relative to scope
 
-## Contribuire
+## Contributing
 
-1. Crea un fork del repository
-2. Crea un branch per la tua feature (`git checkout -b feature/nome-feature`)
-3. Effettua il commit delle modifiche (`git commit -m 'Aggiunge nome-feature'`)
-4. Fai push del branch (`git push origin feature/nome-feature`)
-5. Apri una Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/feature-name`)
+3. Commit your changes (`git commit -m 'Add feature-name'`)
+4. Push the branch (`git push origin feature/feature-name`)
+5. Open a Pull Request
 
-## Autore
+## Author
 
 - [fabiocerundolo-bit](https://github.com/fabiocerundolo-bit)
