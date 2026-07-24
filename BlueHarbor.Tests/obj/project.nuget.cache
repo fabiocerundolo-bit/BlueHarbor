@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "1mg436m+II8=",
+  "dgSpecHash": "QgxkOGnX1gA=",
   "success": true,
-  "projectFilePath": "C:\\Users\\leonida.qemeqi\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
+  "projectFilePath": "C:\\Users\\leonida.qemeqi\\Desktop\\BlueHarborMain\\BlueHarbor\\BlueHarbor.Tests\\BlueHarbor.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\leonida.qemeqi\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\leonida.qemeqi\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
