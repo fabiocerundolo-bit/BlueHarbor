@@ -27,7 +27,7 @@ export default function CreateShipForm() {
         const randomItem = shipList[Math.floor(Math.random() * shipList.length)]
         idListaNavi = randomItem ? randomItem.id : 1
       }
-      const ship = await createShip(idListaNavi, notes.trim() || null, shipName.trim() || null)
+      const ship = await createShip(idListaNavi, shipName.trim() || null, notes.trim() || null)
       setLastCreated(ship)
       setSelectedShipId('')
       setNotes('')
